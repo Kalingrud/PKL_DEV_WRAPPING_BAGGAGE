@@ -9,11 +9,13 @@ app.get('/', (req, res) => {
 
 app.get('/iffat', (req, res) => {
   res.send('haloo saya iffat')
+  res.send('Hobi saya coli')
 })
 
 
 app.get('/kalingga', (req, res) => {
   res.send('haloo saya kalingga')
+  res.send('hobi saya makan')
 })
 
 
