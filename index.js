@@ -8,12 +8,12 @@ app.get('/', (req, res) => {
 
 
 app.get('/iffat', (req, res) => {
-  res.send('haloo saya iffat hobi suka coli')
+  res.send('haloo saya iffat')
 })
 
 
 app.get('/kalingga', (req, res) => {
-  res.send('haloo saya kalingga hobi suka bokep')
+  res.send('haloo saya kalingga')
 })
 
 
