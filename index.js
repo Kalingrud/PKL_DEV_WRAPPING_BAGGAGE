@@ -7,7 +7,7 @@ app.get('/', (req, res) => {
 })
 
 app.get('/iffat', (req, res) => {
-  res.send('Halo, saya Iffat. Umur saya 14 tahun. Hobi saya bermain bola. Saya bersekolah di smk telesandi bekasi jurusan RPL.')
+  res.send('haloo saya iffat hobi saya main bola')
 })
 
 app.get('/kalingga', (req, res) => {
