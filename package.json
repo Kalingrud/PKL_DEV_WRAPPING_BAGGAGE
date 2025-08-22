@@ -1,0 +1,26 @@
+{
+  "name": "wrapping-node",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@gitlab.com/khiraichi/wrapping-node.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://gitlab.com/khiraichi/wrapping-node/issues"
+  },
+  "homepage": "https://gitlab.com/khiraichi/wrapping-node#readme",
+  "dependencies": {
+    "body-parser": "^2.2.0",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "mysql2": "^3.14.3"
+  }
+}
