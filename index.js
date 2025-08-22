@@ -11,7 +11,11 @@ app.get('/iffat', (req, res) => {
 })
 
 app.get('/kalingga', (req, res) => {
-  res.send('Halo, saya Kalingga. Umur saya 15 tahun. Hobi saya bermain bulu tangkis. Saya bersekolahh di smk telesandi bekasi jurusan RPL.')
+  res.send('Halo, saya Kalingga. Umur saya 15 tahun. Hobi saya bermain bulu tangkis. Saya bersekolah di smk telesandi bekasi jurusan RPL.')
+})
+
+app.get('/buyung', (req, res) => {
+  res.send('Halo, saya buyung. Umur saya 20 tahun. Hobi saya bermain futsal. Saya bersekolah di smk telesandi bekasi jurusan RPL.')
 })
 
 app.listen(port, () => {
