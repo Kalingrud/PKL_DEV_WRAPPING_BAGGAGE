@@ -9,8 +9,7 @@ router.get('/test', (req, res) => {
         success: true,
         message: 'Siswa route berhasil diakses!',
         timestamp: new Date(),
-        ip: req.ip,
-        headers: req.headers
+        ip: req.ip
     });
 });
 
@@ -23,57 +22,7 @@ router.use((req, res, next) => {
     next();
 });
 
-// 1. Create new student
-router.post('/', (req, res) => {
-    console.log('POST / - Creating new student');
-    const { nama, asal_sekolah, jurusan, hobby } = req.body;
-    
-    // Validation
-    if (!nama || !asal_sekolah) {
-        return res.status(400).json({ 
-            success: false, 
-            message: 'Nama dan asal_sekolah wajib diisi' 
-        });
-    }
-
-    // Validate nama length
-    if (nama.length < 2 || nama.length > 100) {
-        return res.status(400).json({ 
-            success: false, 
-            message: 'Nama harus antara 2-100 karakter' 
-        });
-    }
-    
-    const query = 'INSERT INTO siswa (nama, asal_sekolah, jurusan, hobby, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())';
-    
-    db.query(query, [nama, asal_sekolah, jurusan || null, hobby || null], (err, result) => {
-        if (err) {
-            console.error('Database error:', err);
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Gagal menambahkan siswa', 
-                error: err.message 
-            });
-        }
-        
-        console.log('Student created successfully with ID:', result.insertId);
-        res.status(201).json({
-            success: true,
-            message: 'Siswa berhasil ditambahkan',
-            data: { 
-                id: result.insertId, 
-                nama, 
-                asal_sekolah, 
-                jurusan: jurusan || null, 
-                hobby: hobby || null,
-                created_at: new Date(),
-                updated_at: new Date()
-            }
-        });
-    });
-});
-
-// 2. Get all students with pagination and search
+// 1. Get all students with pagination and search
 router.get('/', (req, res) => {
     console.log('GET / - Getting all students');
     const page = parseInt(req.query.page) || 1;
@@ -153,6 +102,56 @@ router.get('/', (req, res) => {
                     has_prev: page > 1
                 }
             });
+        });
+    });
+});
+
+// 2. Create new student
+router.post('/', (req, res) => {
+    console.log('POST / - Creating new student');
+    const { nama, asal_sekolah, jurusan, hobby } = req.body;
+    
+    // Validation
+    if (!nama || !asal_sekolah) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Nama dan asal_sekolah wajib diisi' 
+        });
+    }
+
+    // Validate nama length
+    if (nama.length < 2 || nama.length > 100) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Nama harus antara 2-100 karakter' 
+        });
+    }
+    
+    const query = 'INSERT INTO siswa (nama, asal_sekolah, jurusan, hobby, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())';
+    
+    db.query(query, [nama, asal_sekolah, jurusan || null, hobby || null], (err, result) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Gagal menambahkan siswa', 
+                error: err.message 
+            });
+        }
+        
+        console.log('Student created successfully with ID:', result.insertId);
+        res.status(201).json({
+            success: true,
+            message: 'Siswa berhasil ditambahkan',
+            data: { 
+                id: result.insertId, 
+                nama, 
+                asal_sekolah, 
+                jurusan: jurusan || null, 
+                hobby: hobby || null,
+                created_at: new Date(),
+                updated_at: new Date()
+            }
         });
     });
 });
@@ -331,7 +330,7 @@ router.delete('/:id', (req, res) => {
     });
 });
 
-// 6. BONUS: Get students count by jurusan (Statistics)
+// 6. Get students count by jurusan (Statistics)
 router.get('/stats/jurusan', (req, res) => {
     console.log('GET /stats/jurusan - Getting statistics by jurusan');
     const query = `
@@ -363,7 +362,7 @@ router.get('/stats/jurusan', (req, res) => {
     });
 });
 
-// 7. BONUS: Bulk delete students
+// 7. Bulk delete students
 router.post('/bulk-delete', (req, res) => {
     const { ids } = req.body;
     console.log('POST /bulk-delete - Bulk deleting students:', ids);
@@ -404,31 +403,6 @@ router.post('/bulk-delete', (req, res) => {
             deleted_count: result.affectedRows,
             requested_ids: ids
         });
-    });
-});
-
-// DEBUG: Catch-all route for debugging
-router.all('*', (req, res) => {
-    console.log(`=== UNKNOWN SISWA ROUTE: ${req.method} ${req.originalUrl} ===`);
-    res.status(404).json({
-        success: false,
-        message: 'Route tidak ditemukan dalam siswa router',
-        requested: {
-            method: req.method,
-            path: req.originalUrl,
-            params: req.params,
-            query: req.query
-        },
-        available_routes: [
-            'GET /api/siswa/test',
-            'GET /api/siswa',
-            'POST /api/siswa',
-            'GET /api/siswa/:id',
-            'PUT /api/siswa/:id',
-            'DELETE /api/siswa/:id',
-            'GET /api/siswa/stats/jurusan',
-            'POST /api/siswa/bulk-delete'
-        ]
     });
 });
 
