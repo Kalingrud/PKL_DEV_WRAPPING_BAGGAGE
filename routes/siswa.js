@@ -2,8 +2,30 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
+// DEBUG: Test route to check if router is working
+router.get('/test', (req, res) => {
+    console.log('=== SISWA TEST ROUTE CALLED ===');
+    res.json({ 
+        success: true,
+        message: 'Siswa route berhasil diakses!',
+        timestamp: new Date(),
+        ip: req.ip,
+        headers: req.headers
+    });
+});
+
+// DEBUG: Middleware to log all requests
+router.use((req, res, next) => {
+    console.log(`=== SISWA ROUTE: ${req.method} ${req.originalUrl} ===`);
+    console.log('Query params:', req.query);
+    console.log('Body:', req.body);
+    console.log('IP:', req.ip);
+    next();
+});
+
 // 1. Create new student
 router.post('/', (req, res) => {
+    console.log('POST / - Creating new student');
     const { nama, asal_sekolah, jurusan, hobby } = req.body;
     
     // Validation
@@ -34,6 +56,7 @@ router.post('/', (req, res) => {
             });
         }
         
+        console.log('Student created successfully with ID:', result.insertId);
         res.status(201).json({
             success: true,
             message: 'Siswa berhasil ditambahkan',
@@ -52,10 +75,13 @@ router.post('/', (req, res) => {
 
 // 2. Get all students with pagination and search
 router.get('/', (req, res) => {
+    console.log('GET / - Getting all students');
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const search = req.query.search || '';
     const jurusan = req.query.jurusan || '';
+    
+    console.log('Query parameters:', { page, limit, search, jurusan });
     
     const offset = (page - 1) * limit;
     
@@ -83,10 +109,13 @@ router.get('/', (req, res) => {
     query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
     queryParams.push(limit, offset);
     
+    console.log('Executing query:', query);
+    console.log('With parameters:', queryParams);
+    
     // Get total count first
     db.query(countQuery, countParams, (err, countResult) => {
         if (err) {
-            console.error('Database error:', err);
+            console.error('Database error (count):', err);
             return res.status(500).json({ 
                 success: false, 
                 message: 'Gagal mengambil data siswa', 
@@ -97,10 +126,12 @@ router.get('/', (req, res) => {
         const total = countResult[0].total;
         const totalPages = Math.ceil(total / limit);
         
+        console.log(`Found ${total} total students`);
+        
         // Get actual data
         db.query(query, queryParams, (err, results) => {
             if (err) {
-                console.error('Database error:', err);
+                console.error('Database error (data):', err);
                 return res.status(500).json({ 
                     success: false, 
                     message: 'Gagal mengambil data siswa', 
@@ -108,6 +139,7 @@ router.get('/', (req, res) => {
                 });
             }
             
+            console.log(`Returning ${results.length} students`);
             res.status(200).json({ 
                 success: true, 
                 message: 'Data siswa berhasil diambil', 
@@ -128,6 +160,7 @@ router.get('/', (req, res) => {
 // 3. Get student by ID
 router.get('/:id', (req, res) => {
     const { id } = req.params;
+    console.log(`GET /:id - Getting student with ID: ${id}`);
     
     // Validate ID
     if (!id || isNaN(id)) {
@@ -148,12 +181,14 @@ router.get('/:id', (req, res) => {
         }
         
         if (results.length === 0) {
+            console.log(`Student with ID ${id} not found`);
             return res.status(404).json({ 
                 success: false, 
                 message: 'Siswa tidak ditemukan' 
             });
         }
         
+        console.log(`Student found:`, results[0]);
         res.status(200).json({ 
             success: true, 
             message: 'Data siswa berhasil diambil',
@@ -166,6 +201,7 @@ router.get('/:id', (req, res) => {
 router.put('/:id', (req, res) => {
     const { id } = req.params;
     const { nama, asal_sekolah, jurusan, hobby } = req.body;
+    console.log(`PUT /:id - Updating student with ID: ${id}`);
     
     // Validate ID
     if (!id || isNaN(id)) {
@@ -203,6 +239,7 @@ router.put('/:id', (req, res) => {
         }
         
         if (results.length === 0) {
+            console.log(`Student with ID ${id} not found for update`);
             return res.status(404).json({ 
                 success: false, 
                 message: 'Siswa tidak ditemukan' 
@@ -220,6 +257,7 @@ router.put('/:id', (req, res) => {
                 });
             }
             
+            console.log(`Student with ID ${id} updated successfully`);
             res.status(200).json({ 
                 success: true, 
                 message: 'Siswa berhasil diupdate', 
@@ -239,6 +277,7 @@ router.put('/:id', (req, res) => {
 // 5. Delete student
 router.delete('/:id', (req, res) => {
     const { id } = req.params;
+    console.log(`DELETE /:id - Deleting student with ID: ${id}`);
     
     // Validate ID
     if (!id || isNaN(id)) {
@@ -260,6 +299,7 @@ router.delete('/:id', (req, res) => {
         }
         
         if (results.length === 0) {
+            console.log(`Student with ID ${id} not found for deletion`);
             return res.status(404).json({ 
                 success: false, 
                 message: 'Siswa tidak ditemukan' 
@@ -278,6 +318,7 @@ router.delete('/:id', (req, res) => {
                 });
             }
             
+            console.log(`Student with ID ${id} deleted successfully`);
             res.status(200).json({ 
                 success: true, 
                 message: 'Siswa berhasil dihapus',
@@ -292,6 +333,7 @@ router.delete('/:id', (req, res) => {
 
 // 6. BONUS: Get students count by jurusan (Statistics)
 router.get('/stats/jurusan', (req, res) => {
+    console.log('GET /stats/jurusan - Getting statistics by jurusan');
     const query = `
         SELECT 
             jurusan, 
@@ -312,6 +354,7 @@ router.get('/stats/jurusan', (req, res) => {
             });
         }
         
+        console.log(`Statistics retrieved: ${results.length} jurusan found`);
         res.status(200).json({ 
             success: true, 
             message: 'Statistik jurusan berhasil diambil',
@@ -323,6 +366,7 @@ router.get('/stats/jurusan', (req, res) => {
 // 7. BONUS: Bulk delete students
 router.post('/bulk-delete', (req, res) => {
     const { ids } = req.body;
+    console.log('POST /bulk-delete - Bulk deleting students:', ids);
     
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
         return res.status(400).json({ 
@@ -353,12 +397,38 @@ router.post('/bulk-delete', (req, res) => {
             });
         }
         
+        console.log(`Bulk delete completed: ${result.affectedRows} students deleted`);
         res.status(200).json({ 
             success: true, 
             message: `${result.affectedRows} siswa berhasil dihapus`,
             deleted_count: result.affectedRows,
             requested_ids: ids
         });
+    });
+});
+
+// DEBUG: Catch-all route for debugging
+router.all('*', (req, res) => {
+    console.log(`=== UNKNOWN SISWA ROUTE: ${req.method} ${req.originalUrl} ===`);
+    res.status(404).json({
+        success: false,
+        message: 'Route tidak ditemukan dalam siswa router',
+        requested: {
+            method: req.method,
+            path: req.originalUrl,
+            params: req.params,
+            query: req.query
+        },
+        available_routes: [
+            'GET /api/siswa/test',
+            'GET /api/siswa',
+            'POST /api/siswa',
+            'GET /api/siswa/:id',
+            'PUT /api/siswa/:id',
+            'DELETE /api/siswa/:id',
+            'GET /api/siswa/stats/jurusan',
+            'POST /api/siswa/bulk-delete'
+        ]
     });
 });
 
