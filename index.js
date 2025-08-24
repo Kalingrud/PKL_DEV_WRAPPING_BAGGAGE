@@ -12,12 +12,6 @@ const PORT = process.env.PORT || 8000;
 // Middleware
 app.use(bodyParser.json());
 
-// Debug middleware to log all requests
-app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.url} from ${req.ip}`);
-    next();
-});
-
 // Routes
 app.use('/api/siswa', siswaRoutes);
 
@@ -31,45 +25,9 @@ db.getConnection((err, connection) => {
     }
 });
 
-// Basic routes for testing
+// Basic route
 app.get('/', (req, res) => {
-    res.json({
-        success: true,
-        message: 'API Siswa berjalan!',
-        timestamp: new Date(),
-        endpoints: [
-            'GET /',
-            'GET /test',
-            'GET /api/siswa',
-            'GET /api/siswa/test',
-            'POST /api/siswa',
-            'GET /api/siswa/:id',
-            'PUT /api/siswa/:id',
-            'DELETE /api/siswa/:id'
-        ]
-    });
-});
-
-// Simple test route
-app.get('/test', (req, res) => {
-    res.json({
-        success: true,
-        message: 'Server test berhasil!',
-        server_time: new Date(),
-        client_ip: req.ip,
-        user_agent: req.get('User-Agent')
-    });
-});
-
-// Health check route
-app.get('/health', (req, res) => {
-    res.json({
-        success: true,
-        status: 'healthy',
-        uptime: process.uptime(),
-        memory: process.memoryUsage(),
-        timestamp: new Date()
-    });
+    res.send('API Siswa berjalan!');
 });
 
 // Error handling middleware
@@ -82,37 +40,14 @@ app.use((err, req, res, next) => {
     });
 });
 
-// 404 handler
+// 404 handler (fix tanpa '*')
 app.use((req, res) => {
-    console.log(`404 - Route not found: ${req.method} ${req.url}`);
     res.status(404).json({
         success: false,
-        message: 'Route tidak ditemukan',
-        requested: {
-            method: req.method,
-            url: req.url,
-            timestamp: new Date()
-        },
-        available_routes: [
-            'GET /',
-            'GET /test',
-            'GET /health',
-            'GET /api/siswa',
-            'POST /api/siswa',
-            'GET /api/siswa/:id',
-            'PUT /api/siswa/:id',
-            'DELETE /api/siswa/:id'
-        ]
+        message: 'Route tidak ditemukan'
     });
 });
 
-// ✅ PENTING: Bind ke 0.0.0.0 agar bisa diakses dari luar
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`=================================`);
-    console.log(`🚀 Server berjalan di:`);
-    console.log(`   Local:   http://localhost:${PORT}`);
-    console.log(`   Network: http://0.0.0.0:${PORT}`);
-    console.log(`=================================`);
-    console.log(`📅 Started at: ${new Date()}`);
-    console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+app.listen(PORT, () => {
+    console.log(`Server berjalan di http://localhost:${PORT}`);
 });
