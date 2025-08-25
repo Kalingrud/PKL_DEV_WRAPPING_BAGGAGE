@@ -1,13 +1,13 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
-const usersRoutes = require('./routes/siswa'); // CRUD users dari file siswa.js
+const usersRoutes = require('./routes/siswa'); // GANTI dari siswa.js ke users.js
 const db = require('./db');
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT || 3007; // Sesuai dengan port di screenshot
 
 // Middleware
 app.use(bodyParser.json());
@@ -50,6 +50,10 @@ app.get('/', (req, res) => {
             users: {
                 'GET /api/users': 'Get all users with pagination (query: page, limit, search, usertype)',
                 'GET /api/users/:id': 'Get user by ID',
+                'GET /api/users/userdesc/:userdesc': 'Get user by userdesc',
+                'GET /api/users/username/:username': 'Get user by username',
+                'GET /api/users/userdesc/:userdesc': 'Get user by userdesc',
+                'GET /api/users/username/:username': 'Get user by username',
                 'POST /api/users': 'Create new user (body: username, userdesc, pass, cookie1, usertype, jenisuser, cabang)',
                 'PUT /api/users/:id': 'Update user by ID',
                 'DELETE /api/users/:id': 'Delete user by ID',
@@ -112,9 +116,15 @@ app.use((req, res) => {
             'GET /api/users',
             'POST /api/users',
             'GET /api/users/:id',
+            'GET /api/users/userdesc/:userdesc',
+            'GET /api/users/username/:username',
+            'GET /api/users/userdesc/:userdesc',
+            'GET /api/users/username/:username',
             'PUT /api/users/:id',
             'DELETE /api/users/:id',
-            'POST /api/users/login'
+            'POST /api/users/login',
+            'GET /api/users/stats/usertype',
+            'POST /api/users/bulk-delete'
         ]
     });
 });

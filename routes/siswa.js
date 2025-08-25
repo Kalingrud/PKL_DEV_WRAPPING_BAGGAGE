@@ -160,6 +160,82 @@ router.get('/', (req, res) => {
     });
 });
 
+
+router.get('/userdesc/:userdesc', (req, res) => {
+    const { userdesc } = req.params;
+    
+    // Validate userdesc
+    if (!userdesc || userdesc.trim() === '') {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Userdesc tidak valid atau kosong' 
+        });
+    }
+    
+    db.query('SELECT id, username, userdesc, cookie1, usertype, jenisuser, cabang FROM users WHERE userdesc = ?', [userdesc], (err, results) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Gagal mengambil data user', 
+                error: err.message 
+            });
+        }
+        
+        if (results.length === 0) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'User dengan userdesc tersebut tidak ditemukan' 
+            });
+        }
+        
+        res.status(200).json({ 
+            success: true, 
+            message: 'Data user berhasil diambil',
+            data: results[0] 
+        });
+    });
+});
+
+// 4. Get user by username - ROUTE BARU
+router.get('/username/:username', (req, res) => {
+    const { username } = req.params;
+    
+    // Validate username
+    if (!username || username.trim() === '') {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Username tidak valid atau kosong' 
+        });
+    }
+    
+    db.query('SELECT id, username, userdesc, cookie1, usertype, jenisuser, cabang FROM users WHERE username = ?', [username], (err, results) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Gagal mengambil data user', 
+                error: err.message 
+            });
+        }
+        
+        if (results.length === 0) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'User dengan username tersebut tidak ditemukan' 
+            });
+        }
+        
+        res.status(200).json({ 
+            success: true, 
+            message: 'Data user berhasil diambil',
+            data: results[0] 
+        });
+    });
+});
+
+
+
 // 3. Get user by ID
 router.get('/:id', (req, res) => {
     const { id } = req.params;
