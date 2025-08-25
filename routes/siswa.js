@@ -1,86 +1,121 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const crypto = require('crypto');
 
-// 1. Create new student
+// Function to hash password using SHA256
+function hashPassword(password) {
+    return crypto.createHash('sha256').update(password).digest('hex');
+}
+
+// 1. Create new user
 router.post('/', (req, res) => {
-    const { nama, asal_sekolah, jurusan, hobby } = req.body;
+    const { username, userdesc, pass, cookie1, usertype, jenisuser, cabang } = req.body;
     
     // Validation
-    if (!nama || !asal_sekolah) {
+    if (!username || !pass) {
         return res.status(400).json({ 
             success: false, 
-            message: 'Nama dan asal_sekolah wajib diisi' 
+            message: 'Username dan password wajib diisi' 
         });
     }
 
-    // Validate nama length
-    if (nama.length < 2 || nama.length > 100) {
+    // Validate username length
+    if (username.length < 3 || username.length > 50) {
         return res.status(400).json({ 
             success: false, 
-            message: 'Nama harus antara 2-100 karakter' 
+            message: 'Username harus antara 3-50 karakter' 
         });
     }
-    
-    const query = 'INSERT INTO siswa (nama, asal_sekolah, jurusan, hobby, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())';
-    
-    db.query(query, [nama, asal_sekolah, jurusan || null, hobby || null], (err, result) => {
+
+    // Check if username already exists
+    db.query('SELECT username FROM users WHERE username = ?', [username], (err, results) => {
         if (err) {
             console.error('Database error:', err);
             return res.status(500).json({ 
                 success: false, 
-                message: 'Gagal menambahkan siswa', 
+                message: 'Gagal memeriksa username', 
                 error: err.message 
             });
         }
+
+        if (results.length > 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Username sudah digunakan' 
+            });
+        }
+
+        // Hash password
+        const hashedPassword = hashPassword(pass);
         
-        res.status(201).json({
-            success: true,
-            message: 'Siswa berhasil ditambahkan',
-            data: { 
-                id: result.insertId, 
-                nama, 
-                asal_sekolah, 
-                jurusan: jurusan || null, 
-                hobby: hobby || null,
-                created_at: new Date(),
-                updated_at: new Date()
+        const query = 'INSERT INTO users (username, userdesc, pass, cookie1, usertype, jenisuser, cabang) VALUES (?, ?, ?, ?, ?, ?, ?)';
+        
+        db.query(query, [
+            username, 
+            userdesc || null, 
+            hashedPassword, 
+            cookie1 || null, 
+            usertype || 0, 
+            jenisuser || 0, 
+            cabang || 0
+        ], (err, result) => {
+            if (err) {
+                console.error('Database error:', err);
+                return res.status(500).json({ 
+                    success: false, 
+                    message: 'Gagal menambahkan user', 
+                    error: err.message 
+                });
             }
+            
+            res.status(201).json({
+                success: true,
+                message: 'User berhasil ditambahkan',
+                data: { 
+                    id: result.insertId, 
+                    username, 
+                    userdesc: userdesc || null, 
+                    usertype: usertype || 0, 
+                    jenisuser: jenisuser || 0,
+                    cabang: cabang || 0
+                }
+            });
         });
     });
 });
 
-// 2. Get all students with pagination and search
+// 2. Get all users with pagination and search
 router.get('/', (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const search = req.query.search || '';
-    const jurusan = req.query.jurusan || '';
+    const usertype = req.query.usertype || '';
     
     const offset = (page - 1) * limit;
     
     // Build query with search and filter
-    let query = 'SELECT * FROM siswa WHERE 1=1';
-    let countQuery = 'SELECT COUNT(*) as total FROM siswa WHERE 1=1';
+    let query = 'SELECT id, username, userdesc, cookie1, usertype, jenisuser, cabang FROM users WHERE 1=1';
+    let countQuery = 'SELECT COUNT(*) as total FROM users WHERE 1=1';
     const queryParams = [];
     const countParams = [];
     
     if (search) {
-        query += ' AND (nama LIKE ? OR asal_sekolah LIKE ? OR hobby LIKE ?)';
-        countQuery += ' AND (nama LIKE ? OR asal_sekolah LIKE ? OR hobby LIKE ?)';
+        query += ' AND (username LIKE ? OR userdesc LIKE ?)';
+        countQuery += ' AND (username LIKE ? OR userdesc LIKE ?)';
         const searchParam = `%${search}%`;
-        queryParams.push(searchParam, searchParam, searchParam);
-        countParams.push(searchParam, searchParam, searchParam);
+        queryParams.push(searchParam, searchParam);
+        countParams.push(searchParam, searchParam);
     }
     
-    if (jurusan) {
-        query += ' AND jurusan = ?';
-        countQuery += ' AND jurusan = ?';
-        queryParams.push(jurusan);
-        countParams.push(jurusan);
+    if (usertype !== '') {
+        query += ' AND usertype = ?';
+        countQuery += ' AND usertype = ?';
+        queryParams.push(parseInt(usertype));
+        countParams.push(parseInt(usertype));
     }
     
-    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    query += ' ORDER BY id DESC LIMIT ? OFFSET ?';
     queryParams.push(limit, offset);
     
     // Get total count first
@@ -89,7 +124,7 @@ router.get('/', (req, res) => {
             console.error('Database error:', err);
             return res.status(500).json({ 
                 success: false, 
-                message: 'Gagal mengambil data siswa', 
+                message: 'Gagal mengambil data user', 
                 error: err.message 
             });
         }
@@ -103,14 +138,14 @@ router.get('/', (req, res) => {
                 console.error('Database error:', err);
                 return res.status(500).json({ 
                     success: false, 
-                    message: 'Gagal mengambil data siswa', 
+                    message: 'Gagal mengambil data user', 
                     error: err.message 
                 });
             }
             
             res.status(200).json({ 
                 success: true, 
-                message: 'Data siswa berhasil diambil', 
+                message: 'Data user berhasil diambil', 
                 data: results,
                 pagination: {
                     current_page: page,
@@ -125,7 +160,7 @@ router.get('/', (req, res) => {
     });
 });
 
-// 3. Get student by ID
+// 3. Get user by ID
 router.get('/:id', (req, res) => {
     const { id } = req.params;
     
@@ -133,16 +168,16 @@ router.get('/:id', (req, res) => {
     if (!id || isNaN(id)) {
         return res.status(400).json({ 
             success: false, 
-            message: 'ID siswa tidak valid' 
+            message: 'ID user tidak valid' 
         });
     }
     
-    db.query('SELECT * FROM siswa WHERE id = ?', [id], (err, results) => {
+    db.query('SELECT id, username, userdesc, cookie1, usertype, jenisuser, cabang FROM users WHERE id = ?', [id], (err, results) => {
         if (err) {
             console.error('Database error:', err);
             return res.status(500).json({ 
                 success: false, 
-                message: 'Gagal mengambil data siswa', 
+                message: 'Gagal mengambil data user', 
                 error: err.message 
             });
         }
@@ -150,54 +185,54 @@ router.get('/:id', (req, res) => {
         if (results.length === 0) {
             return res.status(404).json({ 
                 success: false, 
-                message: 'Siswa tidak ditemukan' 
+                message: 'User tidak ditemukan' 
             });
         }
         
         res.status(200).json({ 
             success: true, 
-            message: 'Data siswa berhasil diambil',
+            message: 'Data user berhasil diambil',
             data: results[0] 
         });
     });
 });
 
-// 4. Update student
+// 4. Update user
 router.put('/:id', (req, res) => {
     const { id } = req.params;
-    const { nama, asal_sekolah, jurusan, hobby } = req.body;
+    const { username, userdesc, pass, cookie1, usertype, jenisuser, cabang } = req.body;
     
     // Validate ID
     if (!id || isNaN(id)) {
         return res.status(400).json({ 
             success: false, 
-            message: 'ID siswa tidak valid' 
+            message: 'ID user tidak valid' 
         });
     }
     
     // Validation
-    if (!nama || !asal_sekolah) {
+    if (!username) {
         return res.status(400).json({ 
             success: false, 
-            message: 'Nama dan asal_sekolah wajib diisi' 
+            message: 'Username wajib diisi' 
         });
     }
 
-    // Validate nama length
-    if (nama.length < 2 || nama.length > 100) {
+    // Validate username length
+    if (username.length < 3 || username.length > 50) {
         return res.status(400).json({ 
             success: false, 
-            message: 'Nama harus antara 2-100 karakter' 
+            message: 'Username harus antara 3-50 karakter' 
         });
     }
     
-    // Check if student exists first
-    db.query('SELECT * FROM siswa WHERE id = ?', [id], (err, results) => {
+    // Check if user exists first
+    db.query('SELECT * FROM users WHERE id = ?', [id], (err, results) => {
         if (err) {
             console.error('Database error:', err);
             return res.status(500).json({ 
                 success: false, 
-                message: 'Gagal mengupdate siswa', 
+                message: 'Gagal mengupdate user', 
                 error: err.message 
             });
         }
@@ -205,38 +240,71 @@ router.put('/:id', (req, res) => {
         if (results.length === 0) {
             return res.status(404).json({ 
                 success: false, 
-                message: 'Siswa tidak ditemukan' 
+                message: 'User tidak ditemukan' 
             });
         }
-        
-        const updateQuery = 'UPDATE siswa SET nama = ?, asal_sekolah = ?, jurusan = ?, hobby = ?, updated_at = NOW() WHERE id = ?';
-        db.query(updateQuery, [nama, asal_sekolah, jurusan || null, hobby || null, id], (err, result) => {
+
+        // Check if username already exists (except current user)
+        db.query('SELECT username FROM users WHERE username = ? AND id != ?', [username, id], (err, usernameResults) => {
             if (err) {
                 console.error('Database error:', err);
                 return res.status(500).json({ 
                     success: false, 
-                    message: 'Gagal mengupdate siswa', 
+                    message: 'Gagal memeriksa username', 
                     error: err.message 
                 });
             }
-            
-            res.status(200).json({ 
-                success: true, 
-                message: 'Siswa berhasil diupdate', 
-                data: { 
-                    id: parseInt(id), 
-                    nama, 
-                    asal_sekolah, 
-                    jurusan: jurusan || null, 
-                    hobby: hobby || null,
-                    updated_at: new Date()
-                } 
+
+            if (usernameResults.length > 0) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Username sudah digunakan' 
+                });
+            }
+
+            // Prepare update query
+            let updateQuery;
+            let updateParams;
+
+            if (pass) {
+                // Update with new password
+                const hashedPassword = hashPassword(pass);
+                updateQuery = 'UPDATE users SET username = ?, userdesc = ?, pass = ?, cookie1 = ?, usertype = ?, jenisuser = ?, cabang = ? WHERE id = ?';
+                updateParams = [username, userdesc || null, hashedPassword, cookie1 || null, usertype || 0, jenisuser || 0, cabang || 0, id];
+            } else {
+                // Update without changing password
+                updateQuery = 'UPDATE users SET username = ?, userdesc = ?, cookie1 = ?, usertype = ?, jenisuser = ?, cabang = ? WHERE id = ?';
+                updateParams = [username, userdesc || null, cookie1 || null, usertype || 0, jenisuser || 0, cabang || 0, id];
+            }
+
+            db.query(updateQuery, updateParams, (err, result) => {
+                if (err) {
+                    console.error('Database error:', err);
+                    return res.status(500).json({ 
+                        success: false, 
+                        message: 'Gagal mengupdate user', 
+                        error: err.message 
+                    });
+                }
+                
+                res.status(200).json({ 
+                    success: true, 
+                    message: 'User berhasil diupdate', 
+                    data: { 
+                        id: parseInt(id), 
+                        username, 
+                        userdesc: userdesc || null, 
+                        usertype: usertype || 0, 
+                        jenisuser: jenisuser || 0,
+                        cabang: cabang || 0
+                    } 
+                });
             });
         });
     });
 });
 
-// 5. Delete student
+// 5. Delete user
 router.delete('/:id', (req, res) => {
     const { id } = req.params;
     
@@ -244,17 +312,17 @@ router.delete('/:id', (req, res) => {
     if (!id || isNaN(id)) {
         return res.status(400).json({ 
             success: false, 
-            message: 'ID siswa tidak valid' 
+            message: 'ID user tidak valid' 
         });
     }
     
-    // Check if student exists first
-    db.query('SELECT * FROM siswa WHERE id = ?', [id], (err, results) => {
+    // Check if user exists first
+    db.query('SELECT * FROM users WHERE id = ?', [id], (err, results) => {
         if (err) {
             console.error('Database error:', err);
             return res.status(500).json({ 
                 success: false, 
-                message: 'Gagal menghapus siswa', 
+                message: 'Gagal menghapus user', 
                 error: err.message 
             });
         }
@@ -262,44 +330,82 @@ router.delete('/:id', (req, res) => {
         if (results.length === 0) {
             return res.status(404).json({ 
                 success: false, 
-                message: 'Siswa tidak ditemukan' 
+                message: 'User tidak ditemukan' 
             });
         }
         
-        const studentData = results[0];
+        const userData = results[0];
         
-        db.query('DELETE FROM siswa WHERE id = ?', [id], (err, result) => {
+        db.query('DELETE FROM users WHERE id = ?', [id], (err, result) => {
             if (err) {
                 console.error('Database error:', err);
                 return res.status(500).json({ 
                     success: false, 
-                    message: 'Gagal menghapus siswa', 
+                    message: 'Gagal menghapus user', 
                     error: err.message 
                 });
             }
             
             res.status(200).json({ 
                 success: true, 
-                message: 'Siswa berhasil dihapus',
+                message: 'User berhasil dihapus',
                 deleted_data: {
-                    id: studentData.id,
-                    nama: studentData.nama
+                    id: userData.id,
+                    username: userData.username
                 }
             });
         });
     });
 });
 
-// 6. BONUS: Get students count by jurusan (Statistics)
-router.get('/stats/jurusan', (req, res) => {
+// 6. Login endpoint
+router.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Username dan password wajib diisi' 
+        });
+    }
+
+    const hashedPassword = hashPassword(password);
+    
+    db.query('SELECT id, username, userdesc, usertype, jenisuser, cabang FROM users WHERE username = ? AND pass = ?', 
+    [username, hashedPassword], (err, results) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Gagal melakukan login', 
+                error: err.message 
+            });
+        }
+        
+        if (results.length === 0) {
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Username atau password salah' 
+            });
+        }
+        
+        res.status(200).json({ 
+            success: true, 
+            message: 'Login berhasil',
+            data: results[0]
+        });
+    });
+});
+
+// 7. BONUS: Get users count by usertype (Statistics)
+router.get('/stats/usertype', (req, res) => {
     const query = `
         SELECT 
-            jurusan, 
-            COUNT(*) as total_siswa 
-        FROM siswa 
-        WHERE jurusan IS NOT NULL 
-        GROUP BY jurusan 
-        ORDER BY total_siswa DESC
+            usertype, 
+            COUNT(*) as total_users 
+        FROM users 
+        GROUP BY usertype 
+        ORDER BY total_users DESC
     `;
     
     db.query(query, (err, results) => {
@@ -307,27 +413,27 @@ router.get('/stats/jurusan', (req, res) => {
             console.error('Database error:', err);
             return res.status(500).json({ 
                 success: false, 
-                message: 'Gagal mengambil statistik jurusan', 
+                message: 'Gagal mengambil statistik usertype', 
                 error: err.message 
             });
         }
         
         res.status(200).json({ 
             success: true, 
-            message: 'Statistik jurusan berhasil diambil',
+            message: 'Statistik usertype berhasil diambil',
             data: results
         });
     });
 });
 
-// 7. BONUS: Bulk delete students
+// 8. BONUS: Bulk delete users
 router.post('/bulk-delete', (req, res) => {
     const { ids } = req.body;
     
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
         return res.status(400).json({ 
             success: false, 
-            message: 'Array IDs siswa diperlukan' 
+            message: 'Array IDs user diperlukan' 
         });
     }
     
@@ -341,21 +447,21 @@ router.post('/bulk-delete', (req, res) => {
     }
     
     const placeholders = validIds.map(() => '?').join(',');
-    const query = `DELETE FROM siswa WHERE id IN (${placeholders})`;
+    const query = `DELETE FROM users WHERE id IN (${placeholders})`;
     
     db.query(query, validIds, (err, result) => {
         if (err) {
             console.error('Database error:', err);
             return res.status(500).json({ 
                 success: false, 
-                message: 'Gagal menghapus siswa', 
+                message: 'Gagal menghapus users', 
                 error: err.message 
             });
         }
         
         res.status(200).json({ 
             success: true, 
-            message: `${result.affectedRows} siswa berhasil dihapus`,
+            message: `${result.affectedRows} users berhasil dihapus`,
             deleted_count: result.affectedRows,
             requested_ids: ids
         });
