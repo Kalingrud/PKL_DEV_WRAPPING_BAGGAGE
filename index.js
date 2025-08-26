@@ -1,7 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
-const usersRoutes = require('./routes/siswa'); // GANTI dari siswa.js ke users.js
+const usersRoutes = require('./routes/users'); // Tetap siswa.js karena file route bernama siswa.js
 const db = require('./db');
 
 dotenv.config();
@@ -9,9 +9,9 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3007; // Sesuai dengan port di screenshot
 
-// Middleware
+// Middleware untuk parsing
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({ extended: true })); // Ini penting untuk x-www-form-urlencoded
 
 // CORS middleware (untuk testing di Postman)
 app.use((req, res, next) => {
@@ -29,6 +29,7 @@ app.use((req, res, next) => {
 // Logging middleware
 app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    console.log('Body:', req.body); // Debug untuk melihat body request
     next();
 });
 
@@ -48,24 +49,25 @@ app.get('/', (req, res) => {
         },
         endpoints: {
             users: {
-                'GET /api/users': 'Get all users with pagination (query: page, limit, search, usertype)',
-                'GET /api/users/:id': 'Get user by ID',
-                'GET /api/users/userdesc/:userdesc': 'Get user by userdesc',
-                'GET /api/users/username/:username': 'Get user by username',
-                'GET /api/users/userdesc/:userdesc': 'Get user by userdesc',
-                'GET /api/users/username/:username': 'Get user by username',
                 'POST /api/users': 'Create new user (body: username, userdesc, pass, cookie1, usertype, jenisuser, cabang)',
-                'PUT /api/users/:id': 'Update user by ID',
-                'DELETE /api/users/:id': 'Delete user by ID',
-                'POST /api/users/login': 'Login user (body: username, password)',
-                'GET /api/users/stats/usertype': 'Get users statistics by usertype',
-                'POST /api/users/bulk-delete': 'Bulk delete users (body: {ids: [1,2,3]})'
+                'POST /api/users/get-all': 'Get all users',
+                'POST /api/users/get-by-id': 'Get user by ID (body: id)',
+                'POST /api/users/get-by-userdesc': 'Get user by userdesc (body: userdesc)',
+                'POST /api/users/get-by-username': 'Get user by username (body: username)',
+                'POST /api/users/update-by-userdesc': 'Update user by userdesc',
+                'POST /api/users/update-by-username': 'Update user by username',
+                'POST /api/users/update-by-id': 'Update user by ID',
+                'POST /api/users/delete-by-userdesc': 'Delete user by userdesc (body: userdesc)',
+                'POST /api/users/delete-by-id': 'Delete user by ID (body: id)',
+                'POST /api/users/delete-by-username': 'Delete user by username (body: username)',
+                'POST /api/users/login': 'Login user (body: username, password)'
             },
             system: {
                 'GET /': 'API documentation',
                 'GET /health': 'Health check'
             }
-        }
+        },
+        note: 'Semua endpoint menggunakan POST method dengan x-www-form-urlencoded body'
     });
 });
 
@@ -113,18 +115,18 @@ app.use((req, res) => {
         available_routes: [
             'GET /',
             'GET /health',
-            'GET /api/users',
             'POST /api/users',
-            'GET /api/users/:id',
-            'GET /api/users/userdesc/:userdesc',
-            'GET /api/users/username/:username',
-            'GET /api/users/userdesc/:userdesc',
-            'GET /api/users/username/:username',
-            'PUT /api/users/:id',
-            'DELETE /api/users/:id',
-            'POST /api/users/login',
-            'GET /api/users/stats/usertype',
-            'POST /api/users/bulk-delete'
+            'POST /api/users/get-all',
+            'POST /api/users/get-by-id',
+            'POST /api/users/get-by-userdesc',
+            'POST /api/users/get-by-username',
+            'POST /api/users/update-by-userdesc',
+            'POST /api/users/update-by-username', 
+            'POST /api/users/update-by-id',
+            'POST /api/users/delete-by-userdesc',
+            'POST /api/users/delete-by-id',
+            'POST /api/users/delete-by-username',
+            'POST /api/users/login'
         ]
     });
 });
@@ -136,6 +138,7 @@ app.listen(PORT, () => {
     console.log(` API Documentation: http://localhost:${PORT}/`);
     console.log(` Health check: http://localhost:${PORT}/health`);
     console.log(`  Database: ${process.env.DB_NAME || 'devfuwiqhip_wrapping'}`);
+    console.log(' Note: Semua API endpoint menggunakan POST method');
     console.log('================================');
 });
 
