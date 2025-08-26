@@ -1,933 +1,331 @@
 const express = require('express');
-const router = express.Router();
-const db = require('../db');
-const crypto = require('crypto');
+const mysql = require('mysql2');
+const bcrypt = require('bcrypt');
+const app = express();
 
-// =========================
-// Utility: Hash password (SHA-256)
-// =========================
-function hashPassword(password) {
-    return crypto.createHash('sha256').update(password).digest('hex');
+// Middleware untuk parsing form data
+app.use(express.urlencoded({ extended: true }));
+
+// Middleware untuk JSON parsing (opsional, jika nanti butuh)
+app.use(express.json());
+
+// Konfigurasi database MySQL
+const db = mysql.createConnection({
+  host: 'localhost',
+  user: 'root',           // ganti dengan username MySQL kamu
+  password: '',           // ganti dengan password MySQL kamu (kosong jika default)
+  database: 'devfuwiqhip_wrapping'
+});
+
+// Test koneksi database
+db.connect((err) => {
+  if (err) {
+    console.error('Error connecting to database:', err);
+    return;
+  }
+  console.log('Connected to MySQL database');
+});
+
+// ENDPOINT UTAMA - Satu endpoint untuk semua operasi CRUD
+app.post('/api/grab_setup', (req, res) => {
+  const { type } = req.body;
+  
+  // Logika penentuan operasi berdasarkan parameter 'type'
+  switch (type) {
+    case 'create':
+      handleCreate(req, res);
+      break;
+    case 'read':
+      handleRead(req, res);
+      break;
+    case 'update':
+      handleUpdate(req, res);
+      break;
+    case 'delete':
+      handleDelete(req, res);
+      break;
+    default:
+      res.status(400).json({ 
+        error: 'Invalid type. Use: create, read, update, or delete' 
+      });
+  }
+});
+
+// FUNGSI CREATE - Insert data baru
+async function handleCreate(req, res) {
+  const { username, userdesc, pass, cookie1, usertype, jenisuser, cabang } = req.body;
+  
+  // Validasi field wajib (cookie1 boleh kosong)
+  if (!username || !userdesc || !pass || !usertype || !jenisuser || !cabang) {
+    return res.status(400).json({ 
+      error: 'Field wajib: username, userdesc, pass, usertype, jenisuser, cabang' 
+    });
+  }
+  
+  try {
+    // Hash password sebelum disimpan
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(pass, saltRounds);
+    
+    const query = `
+      INSERT INTO users (username, userdesc, pass, cookie1, usertype, jenisuser, cabang) 
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+    
+    // cookie1 bisa null jika tidak dikirim
+    const cookieValue = cookie1 || null;
+    
+    db.query(query, [username, userdesc, hashedPassword, cookieValue, usertype, jenisuser, cabang], (err, result) => {
+      if (err) {
+        console.error('Create error:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      res.json({ 
+        message: 'User berhasil dibuat dengan password ter-hash', 
+        userId: result.insertId 
+      });
+    });
+  } catch (error) {
+    console.error('Hash error:', error);
+    res.status(500).json({ error: 'Password hashing failed' });
+  }
 }
 
-// =========================
-// CREATE USER - POST METHOD
-// =========================
-router.post('/', (req, res) => {
-    // Support both 'user' and 'username' parameter names
-    const { type, userdesc, username, user, pass, cookie1, usertype, jenisuser, cabang } = req.body;
-    
-    // Check if this is create operation
-    if (type && type !== 'create') {
-        return res.status(400).json({ 
-            success: false, 
-            message: 'Invalid type for create operation. Use type=create atau kosongkan parameter type.' 
-        });
+// FUNGSI READ - Cari data berdasarkan id, username, atau userdesc
+function handleRead(req, res) {
+  const { id, username, userdesc } = req.body;
+  
+  let query;
+  let params = [];
+  
+  if (id) {
+    query = 'SELECT * FROM users WHERE id = ?';
+    params = [id];
+  } else if (username) {
+    query = 'SELECT * FROM users WHERE username = ?';
+    params = [username];
+  } else if (userdesc) {
+    query = 'SELECT * FROM users WHERE userdesc = ?';
+    params = [userdesc];
+  } else {
+    // Jika tidak ada parameter, ambil semua data
+    query = 'SELECT * FROM users';
+  }
+  
+  db.query(query, params, (err, results) => {
+    if (err) {
+      console.error('Read error:', err);
+      return res.status(500).json({ error: 'Database error' });
     }
     
-    // Use 'user' if provided, otherwise use 'username'
-    const finalUsername = user || username;
-
-    if (!userdesc || !finalUsername || !pass) {
-        return res.status(400).json({ 
-            success: false, 
-            message: 'userdesc, username, dan password wajib diisi' 
-        });
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'Data tidak ditemukan' });
     }
-
-    // Check if userdesc already exists
-    db.query('SELECT id FROM users WHERE userdesc = ?', [userdesc], (err, results) => {
-        if (err) {
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Database error', 
-                error: err.message 
-            });
-        }
-        
-        if (results.length > 0) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Userdesc sudah digunakan' 
-            });
-        }
-
-        // Check if username already exists
-        db.query('SELECT id FROM users WHERE username = ?', [finalUsername], (err, usernameResults) => {
-            if (err) {
-                return res.status(500).json({ 
-                    success: false, 
-                    message: 'Database error', 
-                    error: err.message 
-                });
-            }
-            
-            if (usernameResults.length > 0) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: 'Username sudah digunakan' 
-                });
-            }
-
-            const hashedPassword = hashPassword(pass);
-            
-            db.query(
-                `INSERT INTO users (userdesc, username, pass, cookie1, usertype, jenisuser, cabang) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                [userdesc, finalUsername, hashedPassword, cookie1 || null, usertype || 0, jenisuser || 0, cabang || 0],
-                (err, result) => {
-                    if (err) {
-                        return res.status(500).json({ 
-                            success: false, 
-                            message: 'Gagal menambahkan user', 
-                            error: err.message 
-                        });
-                    }
-                    
-                    res.status(201).json({
-                        success: true,
-                        message: 'User berhasil ditambahkan',
-                        data: { 
-                            id: result.insertId, 
-                            userdesc, 
-                            username: finalUsername 
-                        }
-                    });
-                }
-            );
-        });
+    
+    res.json({ 
+      message: 'Data berhasil ditemukan', 
+      data: results 
     });
-});
-
-// =========================
-// GET ALL USERS - POST METHOD (Keep for backward compatibility)
-// =========================
-router.post('/get-all', (req, res) => {
-    db.query('SELECT * FROM users', (err, results) => {
-        if (err) {
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Database error', 
-                error: err.message 
-            });
-        }
-        
-        res.status(200).json({ 
-            success: true, 
-            data: results 
-        });
-    });
-});
-
-// =========================
-// UNIVERSAL GET ENDPOINT - POST METHOD
-// =========================
-router.post('/get', (req, res) => {
-    const { type, id, username, user, userdesc } = req.body;
-    const finalUsername = user || username;
-    
-    // Handle different GET types
-    switch(type) {
-        case 'get-all':
-            // GET ALL USERS
-            db.query('SELECT * FROM users', (err, results) => {
-                if (err) {
-                    return res.status(500).json({ 
-                        success: false, 
-                        message: 'Database error', 
-                        error: err.message 
-                    });
-                }
-                
-                res.status(200).json({ 
-                    success: true, 
-                    data: results 
-                });
-            });
-            break;
-            
-        case 'get-by-id':
-            // GET BY ID
-            if (!id) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: 'ID wajib diisi untuk get-by-id' 
-                });
-            }
-            
-            db.query('SELECT * FROM users WHERE id = ?', [id], (err, results) => {
-                if (err) {
-                    return res.status(500).json({ 
-                        success: false, 
-                        message: 'Database error', 
-                        error: err.message 
-                    });
-                }
-                
-                if (results.length === 0) {
-                    return res.status(404).json({ 
-                        success: false, 
-                        message: 'User tidak ditemukan' 
-                    });
-                }
-                
-                res.status(200).json({ 
-                    success: true, 
-                    data: results[0] 
-                });
-            });
-            break;
-            
-        case 'get-by-username':
-            // GET BY USERNAME
-            if (!finalUsername) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: 'Username wajib diisi untuk get-by-username' 
-                });
-            }
-            
-            db.query('SELECT * FROM users WHERE username = ?', [finalUsername], (err, results) => {
-                if (err) {
-                    return res.status(500).json({ 
-                        success: false, 
-                        message: 'Database error', 
-                        error: err.message 
-                    });
-                }
-                
-                if (results.length === 0) {
-                    return res.status(404).json({ 
-                        success: false, 
-                        message: 'User tidak ditemukan' 
-                    });
-                }
-                
-                res.status(200).json({ 
-                    success: true, 
-                    data: results[0] 
-                });
-            });
-            break;
-            
-        case 'get-by-userdesc':
-            // GET BY USERDESC
-            if (!userdesc) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: 'Userdesc wajib diisi untuk get-by-userdesc' 
-                });
-            }
-            
-            db.query('SELECT * FROM users WHERE userdesc = ?', [userdesc], (err, results) => {
-                if (err) {
-                    return res.status(500).json({ 
-                        success: false, 
-                        message: 'Database error', 
-                        error: err.message 
-                    });
-                }
-                
-                if (results.length === 0) {
-                    return res.status(404).json({ 
-                        success: false, 
-                        message: 'User tidak ditemukan' 
-                    });
-                }
-                
-                res.status(200).json({ 
-                    success: true, 
-                    data: results[0] 
-                });
-            });
-            break;
-            
-        case 'get-multi':
-        default:
-            // GET BY MULTIPLE CRITERIA (Default behavior)
-            if (!id && !finalUsername && !userdesc) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: 'Minimal satu parameter (id, username, atau userdesc) wajib diisi' 
-                });
-            }
-
-            let query = 'SELECT * FROM users WHERE ';
-            let params = [];
-            let conditions = [];
-
-            if (id) {
-                conditions.push('id = ?');
-                params.push(id);
-            }
-
-            if (finalUsername) {
-                conditions.push('username = ?');
-                params.push(finalUsername);
-            }
-
-            if (userdesc) {
-                conditions.push('userdesc = ?');
-                params.push(userdesc);
-            }
-
-            query += conditions.join(' OR ');
-
-            db.query(query, params, (err, results) => {
-                if (err) {
-                    return res.status(500).json({ 
-                        success: false, 
-                        message: 'Database error', 
-                        error: err.message 
-                    });
-                }
-                
-                if (results.length === 0) {
-                    return res.status(404).json({ 
-                        success: false, 
-                        message: 'User tidak ditemukan' 
-                    });
-                }
-                
-                res.status(200).json({ 
-                    success: true, 
-                    data: results.length === 1 ? results[0] : results 
-                });
-            });
-            break;
-    }
-});
-
-// =========================
-// GET USER BY USERNAME - POST METHOD
-// =========================
-router.post('/get-by-username', (req, res) => {
-    // Support both 'user' and 'username' parameter names
-    const { username, user } = req.body;
-    const finalUsername = user || username;
-    
-    if (!finalUsername) {
-        return res.status(400).json({ 
-            success: false, 
-            message: 'Username wajib diisi' 
-        });
-    }
-
-    db.query('SELECT * FROM users WHERE username = ?', [finalUsername], (err, results) => {
-        if (err) {
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Database error', 
-                error: err.message 
-            });
-        }
-        
-        if (results.length === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'User tidak ditemukan' 
-            });
-        }
-        
-        res.status(200).json({ 
-            success: true, 
-            data: results[0] 
-        });
-    });
-});
-
-// =========================
-// GET USER BY USERDESC - POST METHOD
-// =========================
-router.post('/get-by-userdesc', (req, res) => {
-    const { userdesc } = req.body;
-    
-    if (!userdesc) {
-        return res.status(400).json({ 
-            success: false, 
-            message: 'Userdesc wajib diisi' 
-        });
-    }
-
-    db.query('SELECT * FROM users WHERE userdesc = ?', [userdesc], (err, results) => {
-        if (err) {
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Database error', 
-                error: err.message 
-            });
-        }
-        
-        if (results.length === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'User tidak ditemukan' 
-            });
-        }
-        
-        res.status(200).json({ 
-            success: true, 
-            data: results[0] 
-        });
-    });
-});
-
-// =========================
-// GET USER BY ID - POST METHOD
-// =========================
-router.post('/get-by-id', (req, res) => {
-    const { id } = req.body;
-    
-    if (!id) {
-        return res.status(400).json({ 
-            success: false, 
-            message: 'ID wajib diisi' 
-        });
-    }
-
-    db.query('SELECT * FROM users WHERE id = ?', [id], (err, results) => {
-        if (err) {
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Database error', 
-                error: err.message 
-            });
-        }
-        
-        if (results.length === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'User tidak ditemukan' 
-            });
-        }
-        
-        res.status(200).json({ 
-            success: true, 
-            data: results[0] 
-        });
-    });
-});
-
-// =========================
-// UPDATE USER FUNCTIONS
-// =========================
-function buildUpdateQuery(fields, whereClause, whereValue) {
-    const setClauses = [];
-    const values = [];
-
-    if (fields.username) {
-        setClauses.push("username = ?");
-        values.push(fields.username);
-    }
-
-    if (fields.pass) {
-        setClauses.push("pass = ?");
-        values.push(hashPassword(fields.pass));
-    }
-
-    if (fields.cookie1 !== undefined) {
-        setClauses.push("cookie1 = ?");
-        values.push(fields.cookie1 || null);
-    }
-
-    if (fields.usertype !== undefined) {
-        setClauses.push("usertype = ?");
-        values.push(fields.usertype || 0);
-    }
-
-    if (fields.jenisuser !== undefined) {
-        setClauses.push("jenisuser = ?");
-        values.push(fields.jenisuser || 0);
-    }
-
-    if (fields.cabang !== undefined) {
-        setClauses.push("cabang = ?");
-        values.push(fields.cabang || 0);
-    }
-
-    const query = `UPDATE users SET ${setClauses.join(', ')} WHERE ${whereClause} = ?`;
-    values.push(whereValue);
-
-    return { query, values };
+  });
 }
 
-// =========================
-// UPDATE USER BY USERDESC - POST METHOD
-// =========================
-router.post('/update-by-userdesc', (req, res) => {
-    // Support both 'user' and 'username' parameter names
-    const { userdesc, username, user, pass, cookie1, usertype, jenisuser, cabang } = req.body;
-    const finalUsername = user || username;
-
-    if (!userdesc) {
-        return res.status(400).json({ 
-            success: false, 
-            message: 'Userdesc wajib diisi' 
-        });
-    }
-
-    if (!finalUsername && !pass && cookie1 === undefined && usertype === undefined && jenisuser === undefined && cabang === undefined) {
-        return res.status(400).json({ 
-            success: false, 
-            message: 'Minimal satu field harus diisi untuk update' 
-        });
-    }
-
-    const { query, values } = buildUpdateQuery(
-        { username: finalUsername, pass, cookie1, usertype, jenisuser, cabang }, 
-        "userdesc", 
-        userdesc
-    );
-
-    db.query(query, values, (err, result) => {
-        if (err) {
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Gagal mengupdate user', 
-                error: err.message 
-            });
-        }
-        
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'User tidak ditemukan' 
-            });
-        }
-        
-        res.status(200).json({ 
-            success: true, 
-            message: 'User berhasil diupdate' 
-        });
+// FUNGSI UPDATE - Update data berdasarkan id, username, atau userdesc
+async function handleUpdate(req, res) {
+  const { id, username, userdesc, pass, cookie1, usertype, jenisuser, cabang } = req.body;
+  
+  // Cek ada identifier atau tidak (id, username, atau userdesc)
+  if (!id && !username && !userdesc) {
+    return res.status(400).json({ 
+      error: 'Butuh id, username, atau userdesc untuk update' 
     });
-});
-
-// =========================
-// UPDATE USER BY USERNAME - POST METHOD
-// =========================
-router.post('/update-by-username', (req, res) => {
-    // Support both 'user' and 'username' parameter names
-    const { username, user, pass, cookie1, usertype, jenisuser, cabang } = req.body;
-    const finalUsername = user || username;
-
-    if (!finalUsername) {
-        return res.status(400).json({ 
-            success: false, 
-            message: 'Username wajib diisi' 
-        });
-    }
-
-    if (!pass && cookie1 === undefined && usertype === undefined && jenisuser === undefined && cabang === undefined) {
-        return res.status(400).json({ 
-            success: false, 
-            message: 'Minimal satu field harus diisi untuk update' 
-        });
-    }
-
-    const { query, values } = buildUpdateQuery(
-        { pass, cookie1, usertype, jenisuser, cabang },
-        "username",
-        finalUsername
-    );
-
-    db.query(query, values, (err, result) => {
-        if (err) {
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Gagal mengupdate user', 
-                error: err.message 
-            });
-        }
-        
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'User tidak ditemukan' 
-            });
-        }
-        
-        res.status(200).json({ 
-            success: true, 
-            message: 'User berhasil diupdate' 
-        });
-    });
-});
-
-// =========================
-// UPDATE USER BY ID - POST METHOD
-// =========================
-router.post('/update-by-id', (req, res) => {
-    // Support both 'user' and 'username' parameter names
-    const { id, username, user, pass, cookie1, usertype, jenisuser, cabang } = req.body;
-    const finalUsername = user || username;
-
-    if (!id) {
-        return res.status(400).json({ 
-            success: false, 
-            message: 'ID wajib diisi' 
-        });
-    }
-
-    if (!finalUsername && !pass && cookie1 === undefined && usertype === undefined && jenisuser === undefined && cabang === undefined) {
-        return res.status(400).json({ 
-            success: false, 
-            message: 'Minimal satu field harus diisi untuk update' 
-        });
-    }
-
-    const { query, values } = buildUpdateQuery(
-        { username: finalUsername, pass, cookie1, usertype, jenisuser, cabang }, 
-        "id", 
-        id
-    );
-
-    db.query(query, values, (err, result) => {
-        if (err) {
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Gagal mengupdate user', 
-                error: err.message 
-            });
-        }
-        
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'User tidak ditemukan' 
-            });
-        }
-        
-        res.status(200).json({ 
-            success: true, 
-            message: 'User berhasil diupdate' 
-        });
-    });
-});
-
-// =========================
-// UNIVERSAL DELETE ENDPOINT - POST METHOD
-// =========================
-router.post('/delete', (req, res) => {
-    const { type, id, username, user, userdesc } = req.body;
-    const finalUsername = user || username;
+  }
+  
+  try {
+    // Build query UPDATE dinamis - hanya field yang dikirim di body
+    let updateFields = [];
+    let updateValues = [];
     
-    // Handle different DELETE types
-    switch(type) {
-        case 'delete-by-id':
-            // DELETE BY ID
-            if (!id) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: 'ID wajib diisi untuk delete-by-id' 
-                });
-            }
-            
-            db.query('DELETE FROM users WHERE id = ?', [id], (err, result) => {
-                if (err) {
-                    return res.status(500).json({ 
-                        success: false, 
-                        message: 'Gagal menghapus user', 
-                        error: err.message 
-                    });
-                }
-                
-                if (result.affectedRows === 0) {
-                    return res.status(404).json({ 
-                        success: false, 
-                        message: 'User tidak ditemukan' 
-                    });
-                }
-                
-                res.status(200).json({ 
-                    success: true, 
-                    message: `User dengan ID '${id}' berhasil dihapus` 
-                });
-            });
-            break;
-            
-        case 'delete-by-username':
-            // DELETE BY USERNAME
-            if (!finalUsername) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: 'Username wajib diisi untuk delete-by-username' 
-                });
-            }
-            
-            db.query('DELETE FROM users WHERE username = ?', [finalUsername], (err, result) => {
-                if (err) {
-                    return res.status(500).json({ 
-                        success: false, 
-                        message: 'Gagal menghapus user', 
-                        error: err.message 
-                    });
-                }
-                
-                if (result.affectedRows === 0) {
-                    return res.status(404).json({ 
-                        success: false, 
-                        message: 'User tidak ditemukan' 
-                    });
-                }
-                
-                res.status(200).json({ 
-                    success: true, 
-                    message: `User dengan username '${finalUsername}' berhasil dihapus` 
-                });
-            });
-            break;
-            
-        case 'delete-by-userdesc':
-            // DELETE BY USERDESC
-            if (!userdesc) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: 'Userdesc wajib diisi untuk delete-by-userdesc' 
-                });
-            }
-            
-            db.query('DELETE FROM users WHERE userdesc = ?', [userdesc], (err, result) => {
-                if (err) {
-                    return res.status(500).json({ 
-                        success: false, 
-                        message: 'Gagal menghapus user', 
-                        error: err.message 
-                    });
-                }
-                
-                if (result.affectedRows === 0) {
-                    return res.status(404).json({ 
-                        success: false, 
-                        message: 'User tidak ditemukan' 
-                    });
-                }
-                
-                res.status(200).json({ 
-                    success: true, 
-                    message: `User dengan userdesc '${userdesc}' berhasil dihapus` 
-                });
-            });
-            break;
-            
-        case 'delete-multi':
-        default:
-            // DELETE BY MULTIPLE CRITERIA (Default behavior)
-            if (!id && !finalUsername && !userdesc) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: 'Minimal satu parameter (id, username, atau userdesc) wajib diisi' 
-                });
-            }
-
-            let query = 'DELETE FROM users WHERE ';
-            let params = [];
-            let conditions = [];
-            let identifiers = [];
-
-            if (id) {
-                conditions.push('id = ?');
-                params.push(id);
-                identifiers.push(`ID '${id}'`);
-            }
-
-            if (finalUsername) {
-                conditions.push('username = ?');
-                params.push(finalUsername);
-                identifiers.push(`username '${finalUsername}'`);
-            }
-
-            if (userdesc) {
-                conditions.push('userdesc = ?');
-                params.push(userdesc);
-                identifiers.push(`userdesc '${userdesc}'`);
-            }
-
-            query += conditions.join(' OR ');
-
-            db.query(query, params, (err, result) => {
-                if (err) {
-                    return res.status(500).json({ 
-                        success: false, 
-                        message: 'Gagal menghapus user', 
-                        error: err.message 
-                    });
-                }
-                
-                if (result.affectedRows === 0) {
-                    return res.status(404).json({ 
-                        success: false, 
-                        message: 'User tidak ditemukan' 
-                    });
-                }
-                
-                res.status(200).json({ 
-                    success: true, 
-                    message: `User dengan ${identifiers.join(' atau ')} berhasil dihapus`,
-                    affected_rows: result.affectedRows
-                });
-            });
-            break;
+    // Cek field mana saja yang ada di request body (bukan identifier)
+    if (req.body.hasOwnProperty('pass') && pass) {
+      // Hash password baru jika ada
+      const hashedPassword = await bcrypt.hash(pass, 10);
+      updateFields.push('pass = ?');
+      updateValues.push(hashedPassword);
     }
-});
-
-// =========================
-// DELETE USER BY USERDESC - POST METHOD
-// =========================
-router.post('/delete-by-userdesc', (req, res) => {
-    const { userdesc } = req.body;
     
-    if (!userdesc) {
-        return res.status(400).json({ 
-            success: false, 
-            message: 'Userdesc wajib diisi' 
-        });
+    if (req.body.hasOwnProperty('cookie1')) {
+      updateFields.push('cookie1 = ?');
+      updateValues.push(cookie1 || null);
     }
-
-    db.query('DELETE FROM users WHERE userdesc = ?', [userdesc], (err, result) => {
-        if (err) {
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Gagal menghapus user', 
-                error: err.message 
-            });
-        }
-        
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'User tidak ditemukan' 
-            });
-        }
-        
-        res.status(200).json({ 
-            success: true, 
-            message: `User dengan userdesc '${userdesc}' berhasil dihapus` 
-        });
-    });
-});
-
-// =========================
-// DELETE USER BY ID - POST METHOD
-// =========================
-router.post('/delete-by-id', (req, res) => {
-    const { id } = req.body;
     
-    if (!id) {
-        return res.status(400).json({ 
-            success: false, 
-            message: 'ID wajib diisi' 
-        });
+    if (req.body.hasOwnProperty('usertype')) {
+      updateFields.push('usertype = ?');
+      updateValues.push(usertype);
     }
-
-    db.query('DELETE FROM users WHERE id = ?', [id], (err, result) => {
-        if (err) {
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Gagal menghapus user', 
-                error: err.message 
-            });
-        }
-        
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'User tidak ditemukan' 
-            });
-        }
-        
-        res.status(200).json({ 
-            success: true, 
-            message: `User dengan ID '${id}' berhasil dihapus` 
-        });
-    });
-});
-
-// =========================
-// DELETE USER BY USERNAME - POST METHOD
-// =========================
-router.post('/delete-by-username', (req, res) => {
-    // Support both 'user' and 'username' parameter names
-    const { username, user } = req.body;
-    const finalUsername = user || username;
     
-    if (!finalUsername) {
-        return res.status(400).json({ 
-            success: false, 
-            message: 'Username wajib diisi' 
-        });
+    if (req.body.hasOwnProperty('jenisuser')) {
+      updateFields.push('jenisuser = ?');
+      updateValues.push(jenisuser);
     }
-
-    db.query('DELETE FROM users WHERE username = ?', [finalUsername], (err, result) => {
-        if (err) {
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Gagal menghapus user', 
-                error: err.message 
-            });
-        }
-        
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'User tidak ditemukan' 
-            });
-        }
-        
-        res.status(200).json({ 
-            success: true, 
-            message: `User dengan username '${finalUsername}' berhasil dihapus` 
-        });
+    
+    if (req.body.hasOwnProperty('cabang')) {
+      updateFields.push('cabang = ?');
+      updateValues.push(cabang);
+    }
+    
+    // Update username/userdesc hanya jika bukan dipakai sebagai identifier
+    if (req.body.hasOwnProperty('username') && !username) {
+      updateFields.push('username = ?');
+      updateValues.push(req.body.username);
+    }
+    
+    if (req.body.hasOwnProperty('userdesc') && !userdesc) {
+      updateFields.push('userdesc = ?');
+      updateValues.push(req.body.userdesc);
+    }
+    
+    if (updateFields.length === 0) {
+      return res.status(400).json({ 
+        error: 'Tidak ada field yang akan diupdate' 
+      });
+    }
+    
+    // Tentukan WHERE clause
+    let whereClause;
+    let whereValue;
+    
+    if (id) {
+      whereClause = 'id = ?';
+      whereValue = id;
+    } else if (username) {
+      whereClause = 'username = ?';
+      whereValue = username;
+    } else {
+      whereClause = 'userdesc = ?';
+      whereValue = userdesc;
+    }
+    
+    const query = `UPDATE users SET ${updateFields.join(', ')} WHERE ${whereClause}`;
+    const params = [...updateValues, whereValue];
+    
+    console.log('=== DEBUG UPDATE ===');
+    console.log('Request Body:', req.body);
+    console.log('ID:', id);
+    console.log('Update Fields:', updateFields);
+    console.log('Update Values:', updateValues);
+    console.log('Where Value:', whereValue);
+    console.log('Final Query:', query);
+    console.log('Final Params:', params);
+    console.log('=====================');
+    
+    db.query(query, params, (err, result) => {
+      if (err) {
+        console.error('Update error:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: 'Data tidak ditemukan' });
+      }
+      
+      res.json({ 
+        message: 'Data berhasil diupdate dengan password ter-hash', 
+        affectedRows: result.affectedRows 
+      });
     });
-});
+  } catch (error) {
+    console.error('Update error:', error);
+    res.status(500).json({ error: 'Update process failed' });
+  }
+}
 
-// =========================
-// LOGIN USER - POST METHOD (FIXED)
-// =========================
-router.post('/login', (req, res) => {
-    // Support multiple parameter names for flexibility
-    const { username, user, password, pass } = req.body;
-    const finalUsername = user || username;
-    const finalPassword = password || pass; // Support both 'password' and 'pass'
-
-    if (!finalUsername || !finalPassword) {
-        return res.status(400).json({ 
-            success: false, 
-            message: 'Username dan password wajib diisi' 
-        });
+// FUNGSI DELETE - Hapus data berdasarkan id, username, atau userdesc
+function handleDelete(req, res) {
+  const { id, username, userdesc } = req.body;
+  
+  if (!id && !username && !userdesc) {
+    return res.status(400).json({ 
+      error: 'Butuh id, username, atau userdesc untuk delete' 
+    });
+  }
+  
+  let query;
+  let params;
+  
+  if (id) {
+    query = 'DELETE FROM users WHERE id = ?';
+    params = [id];
+  } else if (username) {
+    query = 'DELETE FROM users WHERE username = ?';
+    params = [username];
+  } else {
+    query = 'DELETE FROM users WHERE userdesc = ?';
+    params = [userdesc];
+  }
+  
+  db.query(query, params, (err, result) => {
+    if (err) {
+      console.error('Delete error:', err);
+      return res.status(500).json({ error: 'Database error' });
     }
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Data tidak ditemukan' });
+    }
+    
+    res.json({ 
+      message: 'Data berhasil dihapus', 
+      affectedRows: result.affectedRows 
+    });
+  });
+}
 
-    const hashedPassword = hashPassword(finalPassword);
-
-    db.query(
-        'SELECT * FROM users WHERE username = ? AND pass = ?', 
-        [finalUsername, hashedPassword], 
-        (err, results) => {
-            if (err) {
-                return res.status(500).json({ 
-                    success: false, 
-                    message: 'Database error', 
-                    error: err.message 
-                });
-            }
-
-            if (results.length === 0) {
-                return res.status(401).json({ 
-                    success: false, 
-                    message: 'Username atau password salah' 
-                });
-            }
-
-            const userData = results[0];
-            // Jangan tampilkan password di response
-            delete userData.pass;
-
-            res.status(200).json({
-                success: true,
-                message: 'Login berhasil',
-                data: userData
-            });
-        }
-    );
+// Start server
+const PORT = process.env.PORT || 3111;
+app.listen(PORT, () => {
+  console.log(`🚀 Server berjalan di http://localhost:${PORT}`);
+  console.log(`📡 CRUD Endpoint: POST http://localhost:${PORT}/api/grab_setup`);
+  console.log(`📝 Gunakan parameter 'type' di body untuk operasi CRUD`);
 });
 
-module.exports = router;
+/* 
+=== CARA SETUP ===
+
+1. Copy kode ini ke file index.js di root folder project kamu
+
+2. Install dependencies:
+   npm install express mysql2 bcrypt
+
+3. Buat tabel users di database grab_setup:
+   USE grab_setup;
+   CREATE TABLE users (
+     id INT PRIMARY KEY AUTO_INCREMENT,
+     username VARCHAR(255) NOT NULL,
+     userdesc VARCHAR(255) NOT NULL,
+     pass VARCHAR(255) NOT NULL,
+     cookie1 VARCHAR(255) NULL,          -- NULL diizinkan
+     usertype INT NOT NULL,
+     jenisuser VARCHAR(255) NOT NULL,
+     cabang VARCHAR(255) NOT NULL
+   );
+
+4. Jalankan server:
+   node index.js
+   atau
+   nodemon index.js (jika sudah install nodemon)
+
+5. Test di Postman:
+   POST http://localhost:3200/api/grab_setup
+   Body: x-www-form-urlencoded
+
+=== STRUKTUR FOLDER SETELAH SETUP ===
+📁 WRAPPING-NODE/
+├── 📁 config/
+├── 📁 controllers/
+├── 📁 models/
+├── 📁 routes/
+├── 📄 index.js          ← COPY KODE INI KESINI
+├── 📄 package.json
+└── 📄 README.md
+*/
