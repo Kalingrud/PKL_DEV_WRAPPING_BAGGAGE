@@ -52,51 +52,76 @@ app.post('/api/users', (req, res) => {
 });
 
 // FUNGSI CREATE - Insert data baru
+// FUNGSI CREATE untuk grab_setup - Insert data baru dengan validasi username
 async function handleCreate(req, res) {
   const { username, userdesc, pass, cookie1, usertype, jenisuser, cabang } = req.body;
   
-  // Validasi field wajib
-  if (!username || !pass) {
+  // Validasi field wajib (untuk grab_setup semua field wajib kecuali cookie1)
+  if (!username || !userdesc || !pass || !usertype || !jenisuser || !cabang) {
     return res.status(400).json({ 
-      error: 'Field wajib: username, pass' 
+      error: 'Field wajib: username, userdesc, pass, usertype, jenisuser, cabang' 
     });
   }
   
   try {
-    // Hash password sebelum disimpan
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(pass, saltRounds);
+    // CEK APAKAH USERNAME SUDAH ADA
+    const checkQuery = 'SELECT COUNT(*) as count FROM users WHERE username = ?';
     
-    const query = `
-      INSERT INTO users (username, userdesc, pass, cookie1, usertype, jenisuser, cabang) 
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `;
-    
-    // Konversi ke tipe yang sesuai dengan database
-    const values = [
-      username,
-      userdesc || null,
-      hashedPassword,
-      cookie1 || null,
-      parseInt(usertype) || 0,
-      parseInt(jenisuser) || 0,
-      parseInt(cabang) || 1
-    ];
-    
-    db.query(query, values, (err, result) => {
+    db.query(checkQuery, [username], async (err, results) => {
       if (err) {
-        console.error('Create error:', err);
-        return res.status(500).json({ error: 'Database error' });
+        console.error('Check username error:', err);
+        return res.status(500).json({ error: 'Database error during username check' });
       }
       
-      res.json({ 
-        message: 'User berhasil dibuat dengan password ter-hash', 
-        userId: result.insertId 
-      });
+      // Jika username sudah ada, tolak request
+      if (results[0].count > 0) {
+        return res.status(409).json({ 
+          error: 'Username sudah ada di database. Gunakan username lain.' 
+        });
+      }
+      
+      // Jika username belum ada, lanjutkan proses insert
+      try {
+        // Hash password sebelum disimpan
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(pass, saltRounds);
+        
+        const insertQuery = `
+          INSERT INTO users (username, userdesc, pass, cookie1, usertype, jenisuser, cabang) 
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `;
+        
+        const values = [
+          username,
+          userdesc,
+          hashedPassword,
+          cookie1 || null,
+          usertype,
+          jenisuser,
+          cabang
+        ];
+        
+        db.query(insertQuery, values, (insertErr, result) => {
+          if (insertErr) {
+            console.error('Insert error:', insertErr);
+            return res.status(500).json({ error: 'Database error during insert' });
+          }
+          
+          res.json({ 
+            message: 'User berhasil dibuat dengan password ter-hash', 
+            userId: result.insertId,
+            username: username
+          });
+        });
+      } catch (hashError) {
+        console.error('Hash error:', hashError);
+        res.status(500).json({ error: 'Password hashing failed' });
+      }
     });
+    
   } catch (error) {
-    console.error('Hash error:', error);
-    res.status(500).json({ error: 'Password hashing failed' });
+    console.error('General error:', error);
+    res.status(500).json({ error: 'Server error' });
   }
 }
 
