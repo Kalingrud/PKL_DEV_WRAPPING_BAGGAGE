@@ -5,15 +5,13 @@ const app = express();
 
 // Middleware untuk parsing form data
 app.use(express.urlencoded({ extended: true }));
-
-// Middleware untuk JSON parsing (opsional, jika nanti butuh)
 app.use(express.json());
 
 // Konfigurasi database MySQL
 const db = mysql.createConnection({
   host: 'localhost',
-  user: 'root',           // ganti dengan username MySQL kamu
-  password: '',           // ganti dengan password MySQL kamu (kosong jika default)
+  user: 'root',
+  password: '',
   database: 'devfuwiqhip_wrapping'
 });
 
@@ -26,37 +24,11 @@ db.connect((err) => {
   console.log('Connected to MySQL database');
 });
 
-// ENDPOINT UTAMA - Satu endpoint untuk semua operasi CRUD
-app.post('/api/users', (req, res) => {
-  const { type } = req.body;
+// ==================== CREATE ENDPOINT ====================
+app.post('/api/users/create', async (req, res) => {
+  const { username, userdesc, pass, usertype, jenisuser, cabang } = req.body;
   
-  // Logika penentuan operasi berdasarkan parameter 'type'
-  switch (type) {
-    case 'create':
-      handleCreate(req, res);
-      break;
-    case 'read':
-      handleRead(req, res);
-      break;
-    case 'update':
-      handleUpdate(req, res);
-      break;
-    case 'delete':
-      handleDelete(req, res);
-      break;
-    default:
-      res.status(400).json({ 
-        error: 'Invalid type. Use: create, read, update, or delete' 
-      });
-  }
-});
-
-// FUNGSI CREATE - Insert data baru
-// FUNGSI CREATE untuk grab_setup - Insert data baru dengan validasi username
-async function handleCreate(req, res) {
-  const { username, userdesc, pass, cookie1, usertype, jenisuser, cabang } = req.body;
-  
-  // Validasi field wajib (untuk grab_setup semua field wajib kecuali cookie1)
+  // Validasi field wajib (sesuai database kecuali cookie1)
   if (!username || !userdesc || !pass || !usertype || !jenisuser || !cabang) {
     return res.status(400).json({ 
       error: 'Field wajib: username, userdesc, pass, usertype, jenisuser, cabang' 
@@ -87,18 +59,17 @@ async function handleCreate(req, res) {
         const hashedPassword = await bcrypt.hash(pass, saltRounds);
         
         const insertQuery = `
-          INSERT INTO users (username, userdesc, pass, cookie1, usertype, jenisuser, cabang) 
-          VALUES (?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO users (username, userdesc, pass, usertype, jenisuser, cabang) 
+          VALUES (?, ?, ?, ?, ?, ?)
         `;
         
         const values = [
           username,
           userdesc,
           hashedPassword,
-          cookie1 || null,
-          usertype,
-          jenisuser,
-          cabang
+          parseInt(usertype),
+          parseInt(jenisuser),
+          parseInt(cabang)
         ];
         
         db.query(insertQuery, values, (insertErr, result) => {
@@ -123,28 +94,51 @@ async function handleCreate(req, res) {
     console.error('General error:', error);
     res.status(500).json({ error: 'Server error' });
   }
-}
+});
 
-// FUNGSI READ - Cari data berdasarkan id, username, atau userdesc
-function handleRead(req, res) {
-  const { id, username, userdesc } = req.body;
+// ==================== READ ENDPOINT ====================
+app.post('/api/users/read', (req, res) => {
+  const { id, username, userdesc, usertype, jenisuser, cabang } = req.body;
   
-  let query;
+  let query = 'SELECT * FROM users WHERE 1=1';
   let params = [];
   
+  // Build dynamic WHERE clause berdasarkan parameter yang dikirim
   if (id) {
-    query = 'SELECT * FROM users WHERE id = ?';
-    params = [parseInt(id)];
-  } else if (username) {
-    query = 'SELECT * FROM users WHERE username = ?';
-    params = [username];
-  } else if (userdesc) {
-    query = 'SELECT * FROM users WHERE userdesc = ?';
-    params = [userdesc];
-  } else {
-    // Jika tidak ada parameter, ambil semua data
-    query = 'SELECT * FROM users';
+    query += ' AND id = ?';
+    params.push(parseInt(id));
   }
+  
+  if (username) {
+    query += ' AND username = ?';
+    params.push(username);
+  }
+  
+  if (userdesc) {
+    query += ' AND userdesc = ?';
+    params.push(userdesc);
+  }
+  
+  if (usertype) {
+    query += ' AND usertype = ?';
+    params.push(parseInt(usertype));
+  }
+  
+  if (jenisuser) {
+    query += ' AND jenisuser = ?';
+    params.push(parseInt(jenisuser));
+  }
+  
+  if (cabang) {
+    query += ' AND cabang = ?';
+    params.push(parseInt(cabang));
+  }
+  
+  console.log('=== DEBUG READ ===');
+  console.log('Request Body:', req.body);
+  console.log('Final Query:', query);
+  console.log('Parameters:', params);
+  console.log('==================');
   
   db.query(query, params, (err, results) => {
     if (err) {
@@ -161,16 +155,16 @@ function handleRead(req, res) {
       data: results 
     });
   });
-}
+});
 
-// FUNGSI UPDATE - Update data berdasarkan id, username, atau userdesc
-async function handleUpdate(req, res) {
-  const { id, username, userdesc, pass, cookie1, usertype, jenisuser, cabang } = req.body;
+// ==================== UPDATE ENDPOINT ====================
+app.post('/api/users/update', async (req, res) => {
+  const { id, username, userdesc, pass, usertype, jenisuser, cabang } = req.body;
   
-  // Cek ada identifier atau tidak
-  if (!id && !username && !userdesc) {
+  // Cek ada identifier atau tidak (minimal harus ada id)
+  if (!id) {
     return res.status(400).json({ 
-      error: 'Butuh id, username, atau userdesc untuk update' 
+      error: 'ID wajib untuk update data' 
     });
   }
   
@@ -179,58 +173,37 @@ async function handleUpdate(req, res) {
     let updateFields = [];
     let updateValues = [];
     
-    // Tentukan identifier yang digunakan
-    let whereClause;
-    let whereValue;
-    
-    if (id) {
-      whereClause = 'id = ?';
-      whereValue = parseInt(id);
-    } else if (username) {
-      whereClause = 'username = ?';
-      whereValue = username;
-    } else {
-      whereClause = 'userdesc = ?';
-      whereValue = userdesc;
-    }
-    
     // Cek field mana saja yang ada di request body untuk diupdate
-    // SEMUA field bisa diupdate, termasuk username dan userdesc
-    if (req.body.hasOwnProperty('username') && req.body.username !== undefined) {
+    if (req.body.hasOwnProperty('username') && username) {
       updateFields.push('username = ?');
-      updateValues.push(req.body.username);
+      updateValues.push(username);
     }
     
-    if (req.body.hasOwnProperty('userdesc')) {
+    if (req.body.hasOwnProperty('userdesc') && userdesc) {
       updateFields.push('userdesc = ?');
-      updateValues.push(req.body.userdesc || null);
+      updateValues.push(userdesc);
     }
     
-    if (req.body.hasOwnProperty('pass') && req.body.pass) {
+    if (req.body.hasOwnProperty('pass') && pass) {
       // Hash password baru jika ada
-      const hashedPassword = await bcrypt.hash(req.body.pass, 10);
+      const hashedPassword = await bcrypt.hash(pass, 10);
       updateFields.push('pass = ?');
       updateValues.push(hashedPassword);
     }
     
-    if (req.body.hasOwnProperty('cookie1')) {
-      updateFields.push('cookie1 = ?');
-      updateValues.push(req.body.cookie1 || null);
-    }
-    
     if (req.body.hasOwnProperty('usertype')) {
       updateFields.push('usertype = ?');
-      updateValues.push(parseInt(req.body.usertype) || 0);
+      updateValues.push(parseInt(usertype));
     }
     
     if (req.body.hasOwnProperty('jenisuser')) {
       updateFields.push('jenisuser = ?');
-      updateValues.push(parseInt(req.body.jenisuser) || 0);
+      updateValues.push(parseInt(jenisuser));
     }
     
     if (req.body.hasOwnProperty('cabang')) {
       updateFields.push('cabang = ?');
-      updateValues.push(parseInt(req.body.cabang) || 1);
+      updateValues.push(parseInt(cabang));
     }
     
     if (updateFields.length === 0) {
@@ -239,18 +212,16 @@ async function handleUpdate(req, res) {
       });
     }
     
-    const query = `UPDATE users SET ${updateFields.join(', ')} WHERE ${whereClause}`;
-    const params = [...updateValues, whereValue];
+    const query = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
+    const params = [...updateValues, parseInt(id)];
     
     console.log('=== DEBUG UPDATE ===');
     console.log('Request Body:', req.body);
-    console.log('Where Clause:', whereClause);
-    console.log('Where Value:', whereValue);
     console.log('Update Fields:', updateFields);
     console.log('Update Values:', updateValues);
     console.log('Final Query:', query);
     console.log('Final Params:', params);
-    console.log('=====================');
+    console.log('====================');
     
     db.query(query, params, (err, result) => {
       if (err) {
@@ -259,7 +230,7 @@ async function handleUpdate(req, res) {
       }
       
       if (result.affectedRows === 0) {
-        return res.status(404).json({ message: 'Data tidak ditemukan' });
+        return res.status(404).json({ message: 'Data dengan ID tersebut tidak ditemukan' });
       }
       
       res.json({ 
@@ -271,31 +242,26 @@ async function handleUpdate(req, res) {
     console.error('Update error:', error);
     res.status(500).json({ error: 'Update process failed' });
   }
-}
+});
 
-// FUNGSI DELETE - Hapus data berdasarkan id, username, atau userdesc
-function handleDelete(req, res) {
-  const { id, username, userdesc } = req.body;
+// ==================== DELETE ENDPOINT ====================
+app.post('/api/users/delete', (req, res) => {
+  const { id } = req.body;
   
-  if (!id && !username && !userdesc) {
+  if (!id) {
     return res.status(400).json({ 
-      error: 'Butuh id, username, atau userdesc untuk delete' 
+      error: 'ID wajib untuk delete data' 
     });
   }
   
-  let query;
-  let params;
+  const query = 'DELETE FROM users WHERE id = ?';
+  const params = [parseInt(id)];
   
-  if (id) {
-    query = 'DELETE FROM users WHERE id = ?';
-    params = [parseInt(id)];
-  } else if (username) {
-    query = 'DELETE FROM users WHERE username = ?';
-    params = [username];
-  } else {
-    query = 'DELETE FROM users WHERE userdesc = ?';
-    params = [userdesc];
-  }
+  console.log('=== DEBUG DELETE ===');
+  console.log('Request Body:', req.body);
+  console.log('Query:', query);
+  console.log('Params:', params);
+  console.log('====================');
   
   db.query(query, params, (err, result) => {
     if (err) {
@@ -304,7 +270,7 @@ function handleDelete(req, res) {
     }
     
     if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'Data tidak ditemukan' });
+      return res.status(404).json({ message: 'Data dengan ID tersebut tidak ditemukan' });
     }
     
     res.json({ 
@@ -312,104 +278,99 @@ function handleDelete(req, res) {
       affectedRows: result.affectedRows 
     });
   });
-}
+});
 
 // Start server
 const PORT = process.env.PORT || 3999;
 app.listen(PORT, () => {
   console.log(`🚀 Server berjalan di http://localhost:${PORT}`);
-  console.log(`📡 CRUD Endpoint: POST http://localhost:${PORT}/api/users`);
-  console.log(`📝 Gunakan parameter 'type' di body untuk operasi CRUD`);
+  console.log(`📡 CREATE Endpoint: POST http://localhost:${PORT}/api/users/create`);
+  console.log(`📡 READ Endpoint: POST http://localhost:${PORT}/api/users/read`);
+  console.log(`📡 UPDATE Endpoint: POST http://localhost:${PORT}/api/users/update`);
+  console.log(`📡 DELETE Endpoint: POST http://localhost:${PORT}/api/users/delete`);
 });
 
 /* 
-=== CONTOH PENGGUNAAN DI POSTMAN ===
+=== PANDUAN PENGGUNAAN DI POSTMAN ===
 
-URL: POST http://localhost:3999/api/users
-Method: POST
+🔹 1. CREATE USER
+URL: POST http://localhost:3999/api/users/create
 Body Type: x-www-form-urlencoded
 
-1. CREATE (Buat user baru):
-   Key-Value:
-   type = create
-   username = johndoe
-   userdesc = John Doe Admin
-   pass = password123
-   cookie1 = abc123session
-   usertype = 1
+Key-Value:
+username = johndoe
+userdesc = John Doe Admin  
+pass = password123
+usertype = 2
+jenisuser = 2
+cabang = 2
+
+🔹 2. READ DATA (BISA PAKAI SEMUA PARAMETER)
+URL: POST http://localhost:3999/api/users/read
+Body Type: x-www-form-urlencoded
+
+a) Semua data (tanpa parameter):
+   (tidak perlu key-value, kirim body kosong)
+
+b) Berdasarkan ID:
+   id = 18
+
+c) Berdasarkan username:
+   username = bagaswisnu
+
+d) Berdasarkan userdesc:
+   userdesc = bagaswisnu
+
+e) Berdasarkan usertype:
+   usertype = 2
+
+f) Berdasarkan jenisuser:
    jenisuser = 2
-   cabang = 3
 
-2. READ (Baca data):
-   a) Semua data:
-      type = read
-   
-   b) Berdasarkan ID:
-      type = read
-      id = 1
-   
-   c) Berdasarkan username:
-      type = read
-      username = johndoe
-   
-   d) Berdasarkan userdesc:
-      type = read
-      userdesc = John Doe Admin
+g) Berdasarkan cabang:
+   cabang = 2
 
-3. UPDATE (Update data):
-   a) Update berdasarkan ID (bisa update semua field termasuk username/userdesc):
-      type = update
-      id = 1
-      username = johnsmith
-      userdesc = John Smith Manager
-      pass = newpassword456
-      usertype = 2
-      jenisuser = 1
-      cabang = 5
-   
-   b) Update berdasarkan username:
-      type = update
-      username = johndoe
-      userdesc = Updated Description
-      usertype = 3
-   
-   c) Update berdasarkan userdesc:
-      type = update
-      userdesc = John Doe Admin
-      pass = changedpassword
-      cabang = 2
+h) Kombinasi parameter:
+   usertype = 2
+   cabang = 2
 
-4. DELETE (Hapus data):
-   a) Berdasarkan ID:
-      type = delete
-      id = 1
-   
-   b) Berdasarkan username:
-      type = delete
-      username = johndoe
-   
-   c) Berdasarkan userdesc:
-      type = delete
-      userdesc = John Doe Admin
+🔹 3. UPDATE DATA
+URL: POST http://localhost:3999/api/users/update
+Body Type: x-www-form-urlencoded
 
-=== PERBAIKAN YANG DILAKUKAN ===
+Key-Value (ID wajib):
+id = 18
+username = johnsmith
+userdesc = John Smith Updated
+pass = newpassword456
+usertype = 1
+jenisuser = 1
+cabang = 1
 
-1. ✅ UPDATE sekarang bisa mengubah SEMUA field termasuk username dan userdesc
-2. ✅ Menyesuaikan tipe data dengan struktur database (INT untuk usertype, jenisuser, cabang)
-3. ✅ Menambahkan parsing parseInt() untuk field numerik
-4. ✅ Menangani nilai NULL dengan benar sesuai struktur database
-5. ✅ Mempertahankan logika identifier yang fleksibel
-6. ✅ Prepared statement untuk keamanan SQL injection
-7. ✅ Password hashing dengan bcrypt
-8. ✅ Error handling yang komprehensif
-9. ✅ Debug logging untuk troubleshooting
+🔹 4. DELETE DATA
+URL: POST http://localhost:3999/api/users/delete
+Body Type: x-www-form-urlencoded
+
+Key-Value:
+id = 18
+
+=== REVISI YANG TELAH DILAKUKAN ===
+
+✅ Endpoint terpisah untuk setiap operasi CRUD
+✅ Parameter sama dengan database (id, username, userdesc, pass, usertype, jenisuser, cabang)
+✅ Cookie1 tidak digunakan sesuai permintaan
+✅ READ bisa menggunakan semua parameter dan kombinasinya
+✅ Password tetap dienkripsi dengan bcrypt
+✅ Validasi data yang proper
+✅ Error handling yang baik
+✅ Debug logging untuk troubleshooting
 
 === CARA SETUP ===
 
-1. Pastikan tabel sudah sesuai struktur yang Anda berikan
-2. npm install express mysql2 bcrypt
-3. node index.js
-4. Test di Postman dengan contoh di atas
+1. Ganti file users.js atau index.js dengan kode ini
+2. Pastikan dependencies sudah terinstall: npm install express mysql2 bcrypt
+3. Jalankan: node index.js atau nodemon index.js
+4. Test di Postman dengan endpoint dan parameter di atas
 
-Sekarang UPDATE akan bekerja dengan sempurna untuk semua field!
+Sekarang API sudah sesuai dengan requirement guru Anda! 🎉
 */
