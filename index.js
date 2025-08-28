@@ -1,6 +1,6 @@
 const express = require('express');
 const mysql = require('mysql2');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const app = express();
 
 // Middleware untuk parsing form data
@@ -23,6 +23,138 @@ db.connect((err) => {
   }
   console.log('Connected to MySQL database');
 });
+
+// ==================== SECURITY FUNCTIONS ====================
+
+// Fungsi validasi untuk mencegah injeksi HTML, JavaScript, dan konten berbahaya
+const validateSecureInput = (value, fieldName) => {
+  if (!value || typeof value !== 'string') {
+    return { isValid: true, message: '' };
+  }
+
+  const input = value.toString().toLowerCase();
+  
+  // Daftar kata kunci dan pola berbahaya
+  const dangerousPatterns = [
+    // JavaScript keywords dan functions
+    /alert\s*\(/i,
+    /confirm\s*\(/i,
+    /prompt\s*\(/i,
+    /eval\s*\(/i,
+    /function\s*\(/i,
+    /document\./i,
+    /window\./i,
+    /console\./i,
+    /location\./i,
+    /navigator\./i,
+    
+    // HTML tags
+    /<script/i,
+    /<\/script/i,
+    /<iframe/i,
+    /<object/i,
+    /<embed/i,
+    /<form/i,
+    /<input/i,
+    /<button/i,
+    /<link/i,
+    /<meta/i,
+    /<style/i,
+    /<\/style/i,
+    
+    // Event handlers
+    /on\w+\s*=/i,  // onclick, onload, dll
+    /javascript:/i,
+    /vbscript:/i,
+    /data:/i,
+    
+    // URL protocols yang mencurigakan
+    /http:\/\//i,
+    /https:\/\//i,
+    /ftp:\/\//i,
+    /file:\/\//i,
+    
+    // SQL injection attempts
+    /union\s+select/i,
+    /drop\s+table/i,
+    /delete\s+from/i,
+    /insert\s+into/i,
+    /update\s+set/i,
+    /exec\s*\(/i,
+    /execute\s*\(/i,
+    
+    // Encoding attempts
+    /&#/i,
+    /%3c/i,  // encoded <
+    /%3e/i,  // encoded >
+    /\\u00/i, // unicode escape
+    /\\x/i,   // hex escape
+    
+    // PHP code
+    /<\?php/i,
+    /<\?=/i,
+    /\?>/i,
+    
+    // Server-side includes
+    /<!--#/i,
+    
+    // Base64 encoding pattern (untuk script tersembunyi)
+    /data:.*base64/i,
+    
+    // XML entities
+    /&lt;/i,
+    /&gt;/i,
+    /&quot;/i,
+    /&#x/i,
+  ];
+
+  // Cek apakah input mengandung pola berbahaya
+  for (const pattern of dangerousPatterns) {
+    if (pattern.test(input)) {
+      return {
+        isValid: false,
+        message: `${fieldName} tidak boleh mengandung kode HTML, JavaScript, atau karakter berbahaya`
+      };
+    }
+  }
+
+  // Cek karakter khusus yang mencurigakan
+  const suspiciousChars = ['<', '>', '{', '}', '(', ')', ';', '&'];
+  const hasSuspiciousChars = suspiciousChars.some(char => input.includes(char));
+  
+  if (hasSuspiciousChars) {
+    return {
+      isValid: false,
+      message: `${fieldName} tidak boleh mengandung karakter khusus seperti < > { } ( ) ; &`
+    };
+  }
+
+  // Cek apakah input terlalu panjang (mencegah buffer overflow)
+  if (value.length > 255) {
+    return {
+      isValid: false,
+      message: `${fieldName} tidak boleh lebih dari 255 karakter`
+    };
+  }
+
+  return { isValid: true, message: '' };
+};
+
+// Fungsi sanitasi input - membersihkan input dari karakter berbahaya
+const sanitizeInput = (value) => {
+  if (!value || typeof value !== 'string') {
+    return value;
+  }
+  
+  return value
+    .replace(/[<>]/g, '') // Hapus < dan >
+    .replace(/[{}]/g, '') // Hapus { dan }
+    .replace(/[()]/g, '') // Hapus ( dan )
+    .replace(/[;&]/g, '') // Hapus ; dan &
+    .replace(/javascript:/gi, '') // Hapus javascript:
+    .replace(/on\w+=/gi, '') // Hapus event handlers
+    .trim(); // Hapus spasi di awal dan akhir
+};
 
 // Fungsi validasi field wajib dengan pesan error spesifik
 const validateRequiredFields = (req, res, fields) => {
@@ -55,6 +187,36 @@ const validateRequiredFields = (req, res, fields) => {
           break;
         default:
           errors.push(`Mohon isi ${field} terlebih dahulu`);
+      }
+    } else {
+      // Validasi keamanan untuk setiap field
+      const securityCheck = validateSecureInput(value, field);
+      if (!securityCheck.isValid) {
+        errors.push(securityCheck.message);
+      }
+    }
+  }
+  
+  if (errors.length > 0) {
+    res.status(400).json({
+      success: false,
+      message: errors.join(', ')
+    });
+    return false;
+  }
+  return true;
+};
+
+// Fungsi validasi khusus untuk setiap field
+const validateFieldSecurity = (req, res) => {
+  const fieldsToCheck = ['username', 'userdesc', 'pass', 'usertype', 'jenisuser', 'cabang'];
+  const errors = [];
+  
+  for (const field of fieldsToCheck) {
+    if (req.body[field] !== undefined) {
+      const securityCheck = validateSecureInput(req.body[field], field);
+      if (!securityCheck.isValid) {
+        errors.push(securityCheck.message);
       }
     }
   }
@@ -93,13 +255,24 @@ const checkUsernameExists = (username, excludeId = null) => {
 // ==================== CREATE ENDPOINT ====================
 app.post('/users/create', async (req, res) => {
   try {
-    // Validasi field wajib dengan pesan error spesifik
+    console.log('=== CREATE REQUEST ===');
+    console.log('Original Body:', req.body);
+    
+    // Validasi field wajib dengan pesan error spesifik DAN validasi keamanan
     const requiredFields = ['username', 'userdesc', 'pass', 'usertype', 'jenisuser', 'cabang'];
     if (!validateRequiredFields(req, res, requiredFields)) {
       return;
     }
     
-    const { username, userdesc, pass, usertype, jenisuser, cabang } = req.body;
+    let { username, userdesc, pass, usertype, jenisuser, cabang } = req.body;
+    
+    // Sanitasi input tambahan untuk field text saja
+    username = sanitizeInput(username);
+    userdesc = sanitizeInput(userdesc);
+    pass = sanitizeInput(pass);
+    // usertype, jenisuser, cabang tidak perlu sanitasi karena akan divalidasi sebagai number
+    
+    console.log('Sanitized Values:', { username, userdesc, usertype, jenisuser, cabang });
     
     // Cek apakah username sudah ada
     const usernameExists = await checkUsernameExists(username);
@@ -110,17 +283,35 @@ app.post('/users/create', async (req, res) => {
       });
     }
     
+    // Validasi tambahan untuk username (hanya boleh alfanumerik dan underscore)
+    const usernamePattern = /^[a-zA-Z0-9_]{3,50}$/;
+    if (!usernamePattern.test(username)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username hanya boleh mengandung huruf, angka, dan underscore (3-50 karakter)'
+      });
+    }
+    
     // Hash password
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(pass, saltRounds);
     
-    // Insert ke database dengan prepared statement
+    // Insert ke database dengan prepared statement (sesuai struktur database)
     const insertQuery = `
       INSERT INTO users (username, userdesc, pass, usertype, jenisuser, cabang) 
       VALUES (?, ?, ?, ?, ?, ?)
     `;
     
-    const values = [username, userdesc, hashedPassword, usertype, jenisuser, cabang];
+    const values = [
+      username, 
+      userdesc, 
+      hashedPassword, 
+      usertype,           // varchar(20) 
+      parseInt(jenisuser), // int
+      parseInt(cabang)     // int
+    ];
+    
+    console.log('Final Insert Values:', values);
     
     db.query(insertQuery, values, (err, result) => {
       if (err) {
@@ -167,6 +358,19 @@ app.post('/users/read', (req, res) => {
 // Fungsi helper untuk handle read request
 function handleReadRequest(req, res, params) {
   try {
+    // Validasi keamanan untuk parameter pencarian
+    for (const [key, value] of Object.entries(params)) {
+      if (value && typeof value === 'string') {
+        const securityCheck = validateSecureInput(value, key);
+        if (!securityCheck.isValid) {
+          return res.status(400).json({
+            success: false,
+            message: securityCheck.message
+          });
+        }
+      }
+    }
+    
     const { id, username, userdesc, usertype, jenisuser, cabang } = params;
     
     let query = 'SELECT id, username, userdesc, usertype, jenisuser, cabang FROM users WHERE 1=1';
@@ -180,12 +384,12 @@ function handleReadRequest(req, res, params) {
     
     if (username) {
       query += ' AND username LIKE ?';
-      queryParams.push('%' + username + '%');
+      queryParams.push('%' + sanitizeInput(username) + '%');
     }
     
     if (userdesc) {
       query += ' AND userdesc LIKE ?';
-      queryParams.push('%' + userdesc + '%');
+      queryParams.push('%' + sanitizeInput(userdesc) + '%');
     }
     
     if (usertype) {
@@ -194,13 +398,13 @@ function handleReadRequest(req, res, params) {
     }
     
     if (jenisuser) {
-      query += ' AND jenisuser LIKE ?';
-      queryParams.push('%' + jenisuser + '%');
+      query += ' AND jenisuser = ?';
+      queryParams.push(parseInt(jenisuser)); // int, bukan LIKE
     }
     
     if (cabang) {
-      query += ' AND cabang LIKE ?';
-      queryParams.push('%' + cabang + '%');
+      query += ' AND cabang = ?';
+      queryParams.push(parseInt(cabang)); // int, bukan LIKE
     }
     
     query += ' ORDER BY id ASC';
@@ -245,6 +449,11 @@ app.post('/users/update', async (req, res) => {
       return;
     }
     
+    // Validasi keamanan untuk semua field yang akan diupdate
+    if (!validateFieldSecurity(req, res)) {
+      return;
+    }
+    
     const { id, username, userdesc, pass, usertype, jenisuser, cabang } = req.body;
     
     // Cek apakah user dengan ID tersebut ada
@@ -278,6 +487,15 @@ app.post('/users/update', async (req, res) => {
           });
         }
         
+        // Validasi pattern username
+        const usernamePattern = /^[a-zA-Z0-9_]{3,50}$/;
+        if (!usernamePattern.test(username)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Username hanya boleh mengandung huruf, angka, dan underscore (3-50 karakter)'
+          });
+        }
+        
         // Cek username unik (kecuali untuk user saat ini)
         const usernameExists = await checkUsernameExists(username, id);
         if (usernameExists) {
@@ -288,8 +506,8 @@ app.post('/users/update', async (req, res) => {
         }
         
         updateFields.push('username = ?');
-        updateValues.push(username);
-        updatedData.username = username;
+        updateValues.push(sanitizeInput(username));
+        updatedData.username = sanitizeInput(username);
       }
       
       if (userdesc !== undefined) {
@@ -300,8 +518,8 @@ app.post('/users/update', async (req, res) => {
           });
         }
         updateFields.push('userdesc = ?');
-        updateValues.push(userdesc);
-        updatedData.userdesc = userdesc;
+        updateValues.push(sanitizeInput(userdesc));
+        updatedData.userdesc = sanitizeInput(userdesc);
       }
       
       if (pass !== undefined) {
@@ -312,7 +530,7 @@ app.post('/users/update', async (req, res) => {
           });
         }
         // Hash password baru
-        const hashedPassword = await bcrypt.hash(pass, 10);
+        const hashedPassword = await bcrypt.hash(sanitizeInput(pass), 10);
         updateFields.push('pass = ?');
         updateValues.push(hashedPassword);
         updatedData.pass = 'Updated';
@@ -326,7 +544,7 @@ app.post('/users/update', async (req, res) => {
           });
         }
         updateFields.push('usertype = ?');
-        updateValues.push(usertype);
+        updateValues.push(usertype); // varchar(20), bukan parseInt
         updatedData.usertype = usertype;
       }
       
@@ -338,8 +556,8 @@ app.post('/users/update', async (req, res) => {
           });
         }
         updateFields.push('jenisuser = ?');
-        updateValues.push(jenisuser);
-        updatedData.jenisuser = jenisuser;
+        updateValues.push(parseInt(jenisuser)); // int
+        updatedData.jenisuser = parseInt(jenisuser);
       }
       
       if (cabang !== undefined) {
@@ -350,8 +568,8 @@ app.post('/users/update', async (req, res) => {
           });
         }
         updateFields.push('cabang = ?');
-        updateValues.push(cabang);
-        updatedData.cabang = cabang;
+        updateValues.push(parseInt(cabang)); // int
+        updatedData.cabang = parseInt(cabang);
       }
       
       if (updateFields.length === 0) {
@@ -405,6 +623,14 @@ app.post('/users/delete', (req, res) => {
   try {
     const { id, username } = req.body;
     
+    // Validasi keamanan untuk parameter yang dikirim
+    if (username && !validateSecureInput(username, 'username').isValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username mengandung karakter berbahaya'
+      });
+    }
+    
     // Validasi: minimal salah satu (id atau username) harus ada dan tidak kosong
     const hasValidId = id !== undefined && id !== null && id !== '' && id.toString().trim() !== '';
     const hasValidUsername = username !== undefined && username !== null && username !== '' && username.toString().trim() !== '';
@@ -424,8 +650,8 @@ app.post('/users/delete', (req, res) => {
     // Prioritas: jika ada username yang valid, gunakan username (karena unik)
     if (hasValidUsername) {
       query += 'username = ?';
-      params = [username];
-      searchBy = `username "${username}"`;
+      params = [sanitizeInput(username)];
+      searchBy = `username "${sanitizeInput(username)}"`;
     } else if (hasValidId) {
       query += 'id = ?';
       params = [parseInt(id)];
@@ -506,88 +732,38 @@ app.post('/users/delete', (req, res) => {
 const PORT = process.env.PORT || 4999;
 app.listen(PORT, () => {
   console.log('🚀 Server berjalan di http://localhost:' + PORT);
+  console.log('');
+  console.log('🔒 SECURITY FEATURES ENABLED:');
+  console.log('✅ HTML/JavaScript injection protection');
+  console.log('✅ SQL injection protection');
+  console.log('✅ URL/Link input blocked');
+  console.log('✅ Script tag detection');
+  console.log('✅ Event handler blocking');
+  console.log('✅ Username pattern validation (alphanumeric + underscore only)');
+  console.log('✅ Input sanitization');
+  console.log('✅ Length validation (max 255 characters)');
+  console.log('');
   console.log('📡 CREATE Endpoint: POST http://localhost:' + PORT + '/users/create');
   console.log('📡 READ Endpoint: GET http://localhost:' + PORT + '/users/read');
   console.log('📡 UPDATE Endpoint: POST http://localhost:' + PORT + '/users/update');
   console.log('📡 DELETE Endpoint: POST http://localhost:' + PORT + '/users/delete');
   console.log('');
-  console.log('=== CONTOH PENGGUNAAN DI POSTMAN ===');
+  console.log('⚠️  BLOCKED INPUT EXAMPLES:');
+  console.log('❌ alert("hello")       - JavaScript function');
+  console.log('❌ <script>code</script> - HTML script tag');
+  console.log('❌ javascript:alert()   - JavaScript protocol');
+  console.log('❌ http://example.com   - URL/link');
+  console.log('❌ onclick=alert()      - Event handler');
+  console.log('❌ user{malicious}      - Special characters');
+  console.log('❌ admin(); DROP TABLE  - SQL injection attempt');
   console.log('');
-  console.log('🔹 1. CREATE USER');
-  console.log('URL: POST http://localhost:' + PORT + '/users/create');
-  console.log('Body Type: x-www-form-urlencoded atau JSON');
-  console.log('Parameters:');
-  console.log('  username = johndoe');
-  console.log('  userdesc = John Doe Admin');
-  console.log('  pass = password123');
-  console.log('  usertype = 2');
-  console.log('  jenisuser = Staff IT');
-  console.log('  cabang = Jakarta');
+  console.log('✅ ALLOWED INPUT EXAMPLES:');
+  console.log('✅ john_doe             - Alphanumeric with underscore');
+  console.log('✅ admin123             - Alphanumeric');
+  console.log('✅ user_staff_2024      - Valid username pattern');
+  console.log('✅ Jakarta Pusat        - Normal text (for userdesc, jenisuser, cabang)');
   console.log('');
-  console.log('🔹 2. READ DATA (dengan LIKE search)');
-  console.log('URL: GET http://localhost:' + PORT + '/users/read');
-  console.log('Query Parameters (opsional):');
-  console.log('  ?username=udin (akan cari yang mengandung "udin")');
-  console.log('  ?jenisuser=Staff (akan cari yang mengandung "Staff")');
-  console.log('  ?cabang=Jakarta (akan cari yang mengandung "Jakarta")');
-  console.log('  ?usertype=2 (exact match)');
-  console.log('  ?id=1 (exact match)');
-  console.log('');
-  console.log('🔹 3. UPDATE DATA');
-  console.log('URL: POST http://localhost:' + PORT + '/users/update');
-  console.log('Body Type: x-www-form-urlencoded atau JSON');
-  console.log('Parameters (ID wajib, yang lain opsional):');
-  console.log('  id = 1');
-  console.log('  username = johnsmith');
-  console.log('  userdesc = John Smith Updated');
-  console.log('');
-  console.log('🔹 4. DELETE DATA');
-  console.log('URL: POST http://localhost:' + PORT + '/users/delete');
-  console.log('Body Type: x-www-form-urlencoded atau JSON');
-  console.log('Parameters (pilih salah satu atau keduanya):');
-  console.log('  id = 1                    (hapus berdasarkan ID)');
-  console.log('  username = johndoe        (hapus berdasarkan username)');
-  console.log('  id = 1 & username = johndoe  (hapus berdasarkan ID dan username)');
-  console.log('');
-  console.log('Contoh DELETE berdasarkan ID saja:');
-  console.log('  id = 1');
-  console.log('');
-  console.log('Contoh DELETE berdasarkan username saja:');
-  console.log('  username = johndoe');
-  console.log('');
-  console.log('Contoh DELETE berdasarkan keduanya (lebih spesifik):');
-  console.log('  id = 1');
-  console.log('  username = johndoe');
-  console.log('');
-  console.log('=== CARA MENGGUNAKAN DI POSTMAN ===');
-  console.log('');
-  console.log('⚠️  PENTING: Semua endpoint menggunakan method POST, kecuali READ yang menggunakan GET!');
-  console.log('');
-  console.log('1. Buka Postman');
-  console.log('2. Untuk UPDATE:');
-  console.log('   - Pilih method: POST');
-  console.log('   - URL: http://localhost:' + PORT + '/users/update');
-  console.log('   - Body > x-www-form-urlencoded atau raw > JSON');
-  console.log('   - Masukkan parameter: id, username, dll');
-  console.log('');
-  console.log('3. Untuk DELETE:');
-  console.log('   - Pilih method: POST');
-  console.log('   - URL: http://localhost:' + PORT + '/users/delete');
-  console.log('   - Body > x-www-form-urlencoded atau raw > JSON');
-  console.log('   - Masukkan parameter: id atau username (atau keduanya)');
-  console.log('   - Contoh: id = 1 atau username = johndoe');
-  console.log('');
-  console.log('=== FITUR YANG SUDAH SESUAI ATURAN GURU ===');
-  console.log('✅ Endpoint berbeda untuk setiap CRUD');
-  console.log('✅ Parameter sama dengan nama kolom database');
-  console.log('✅ Validasi field wajib dengan pesan error spesifik');
-  console.log('✅ Username harus unik - cek duplikat');
-  console.log('✅ Pencarian dengan LIKE untuk username, jenisuser, cabang');
-  console.log('✅ Password di-hash dengan bcrypt');
-  console.log('✅ Prepared statements untuk keamanan');
-  console.log('✅ Error handling yang lengkap');
-  console.log('');
-  console.log('✅ Server siap digunakan!');
+  console.log('🔧 Server siap digunakan dengan proteksi keamanan!');
 });
 
 module.exports = app;
