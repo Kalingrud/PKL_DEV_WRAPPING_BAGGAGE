@@ -15,6 +15,13 @@ pr pak harit
 
 Pr pa harit 
 28 Agustus 2025
+-Mindahin tabel dari xampp ke navicat✅
 -Mindahin tabel users dari xampp ke navicat✅
 -konekin api ke navicat bukan ke xampp✅
+
+
+Pr pa harit 
+29 Agustus 2025
+- coba ngehit ip laptop lain di postman 
+- api_log
 
