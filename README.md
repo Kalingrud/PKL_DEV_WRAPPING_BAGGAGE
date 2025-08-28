@@ -15,5 +15,5 @@ pr pak harit
 
 Pr pa harit 
 28 Agustus 2025
-Mindahin tabel dari xampp ke navicat
-konekin api ke navicat bukan ke xampp
+-Mindahin tabel dari xampp ke navicat
+-konekin api ke navicat bukan ke xampp
