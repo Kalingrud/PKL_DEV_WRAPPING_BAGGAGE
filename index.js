@@ -9,10 +9,10 @@ app.use(express.json());
 
 // Konfigurasi database MySQL
 const db = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'devfuwiqhip_wrapping'
+  host: '103.153.61.219',
+  user: 'pkl_dev',
+  password: 'Pkl_dev123!',
+  database: 'pkl_wrapping'
 });
 
 // Test koneksi database
