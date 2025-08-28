@@ -1,4 +1,4 @@
-## mandatoring
+## mandatoring 
 1.username ✅+
 2.userdesc✅
 3.pass✅
@@ -7,8 +7,13 @@
 6.jenisuser✅
 7.cabang✅
 
-pr dari pak harit
+pr pak harit
+27 Agustus 2025
+-di postman setiap crud beda endpoint✅
+-parameternya harus sama seperti di database✅
+-read bisa select semua parameter✅
 
--di postman setiap crud beda endpoint
--parameternya harus sama seperti di database
--read bisa select semua parameter
+Pr pa harit 
+28 Agustus 2025
+Mindahin tabel dari xampp ke navicat
+konekin api ke navicat bukan ke xampp
