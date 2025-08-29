@@ -1,7 +1,15 @@
 const express = require('express');
 const mysql = require('mysql2');
 const bcrypt = require('bcryptjs');
+const cors = require('cors'); // Tambahkan CORS untuk cross-origin requests
 const app = express();
+
+// Middleware untuk CORS (memungkinkan akses dari IP berbeda)
+app.use(cors({
+  origin: '*', // Izinkan semua origin untuk testing
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 
 // Middleware untuk parsing form data
 app.use(express.urlencoded({ extended: true }));
@@ -252,10 +260,64 @@ const checkUsernameExists = (username, excludeId = null) => {
   });
 };
 
+// Helper function untuk mendapatkan IP address lokal
+const getLocalIPAddress = () => {
+  const { networkInterfaces } = require('os');
+  const nets = networkInterfaces();
+  const results = [];
+
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      // Skip over non-IPv4 dan internal addresses
+      if (net.family === 'IPv4' && !net.internal) {
+        results.push(net.address);
+      }
+    }
+  }
+  
+  return results;
+};
+
+// ==================== ROOT ENDPOINT ====================
+app.get('/', (req, res) => {
+  const localIPs = getLocalIPAddress();
+  const serverInfo = {
+    message: 'User Management API Server',
+    version: '1.0.0',
+    timestamp: new Date().toISOString(),
+    server_info: {
+      localhost: `http://localhost:${PORT || 4999}`,
+      local_ips: localIPs.map(ip => `http://${ip}:${PORT || 4999}`),
+      port: PORT || 4999
+    },
+    endpoints: {
+      create: 'POST /users/create',
+      read_get: 'GET /users/read',
+      read_post: 'POST /users/read',
+      update: 'POST /users/update',
+      delete: 'POST /users/delete'
+    },
+    security_features: [
+      'HTML/JavaScript injection protection',
+      'SQL injection protection', 
+      'URL/Link input blocked',
+      'Script tag detection',
+      'Event handler blocking',
+      'Username pattern validation',
+      'Input sanitization',
+      'Length validation (max 255 characters)',
+      'CORS enabled for cross-origin requests'
+    ]
+  };
+  
+  res.json(serverInfo);
+});
+
 // ==================== CREATE ENDPOINT ====================
 app.post('/users/create', async (req, res) => {
   try {
     console.log('=== CREATE REQUEST ===');
+    console.log('Client IP:', req.ip || req.connection.remoteAddress);
     console.log('Original Body:', req.body);
     
     // Validasi field wajib dengan pesan error spesifik DAN validasi keamanan
@@ -270,7 +332,6 @@ app.post('/users/create', async (req, res) => {
     username = sanitizeInput(username);
     userdesc = sanitizeInput(userdesc);
     pass = sanitizeInput(pass);
-    // usertype, jenisuser, cabang tidak perlu sanitasi karena akan divalidasi sebagai number
     
     console.log('Sanitized Values:', { username, userdesc, usertype, jenisuser, cabang });
     
@@ -296,7 +357,7 @@ app.post('/users/create', async (req, res) => {
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(pass, saltRounds);
     
-    // Insert ke database dengan prepared statement (sesuai struktur database)
+    // Insert ke database dengan prepared statement
     const insertQuery = `
       INSERT INTO users (username, userdesc, pass, usertype, jenisuser, cabang) 
       VALUES (?, ?, ?, ?, ?, ?)
@@ -358,6 +419,10 @@ app.post('/users/read', (req, res) => {
 // Fungsi helper untuk handle read request
 function handleReadRequest(req, res, params) {
   try {
+    console.log('=== READ REQUEST ===');
+    console.log('Client IP:', req.ip || req.connection.remoteAddress);
+    console.log('Request Params:', params);
+    
     // Validasi keamanan untuk parameter pencarian
     for (const [key, value] of Object.entries(params)) {
       if (value && typeof value === 'string') {
@@ -376,7 +441,7 @@ function handleReadRequest(req, res, params) {
     let query = 'SELECT id, username, userdesc, usertype, jenisuser, cabang FROM users WHERE 1=1';
     let queryParams = [];
     
-    // Build dynamic WHERE clause dengan LIKE untuk pencarian
+    // Build dynamic WHERE clause
     if (id) {
       query += ' AND id = ?';
       queryParams.push(parseInt(id));
@@ -394,26 +459,23 @@ function handleReadRequest(req, res, params) {
     
     if (usertype) {
       query += ' AND usertype = ?';
-      queryParams.push(parseInt(usertype));
+      queryParams.push(usertype); // Keep as string untuk varchar
     }
     
     if (jenisuser) {
       query += ' AND jenisuser = ?';
-      queryParams.push(parseInt(jenisuser)); // int, bukan LIKE
+      queryParams.push(parseInt(jenisuser));
     }
     
     if (cabang) {
       query += ' AND cabang = ?';
-      queryParams.push(parseInt(cabang)); // int, bukan LIKE
+      queryParams.push(parseInt(cabang));
     }
     
     query += ' ORDER BY id ASC';
     
-    console.log('=== DEBUG READ ===');
-    console.log('Request Params:', params);
     console.log('Final Query:', query);
     console.log('Parameters:', queryParams);
-    console.log('==================');
     
     db.query(query, queryParams, (err, results) => {
       if (err) {
@@ -444,6 +506,10 @@ function handleReadRequest(req, res, params) {
 // ==================== UPDATE ENDPOINT ====================
 app.post('/users/update', async (req, res) => {
   try {
+    console.log('=== UPDATE REQUEST ===');
+    console.log('Client IP:', req.ip || req.connection.remoteAddress);
+    console.log('Request Body:', req.body);
+    
     // Validasi ID wajib ada
     if (!validateRequiredFields(req, res, ['id'])) {
       return;
@@ -473,12 +539,11 @@ app.post('/users/update', async (req, res) => {
         });
       }
       
-      // Build query UPDATE dinamis dengan validasi
+      // Build query UPDATE dinamis
       let updateFields = [];
       let updateValues = [];
       let updatedData = {};
       
-      // Validasi dan build update untuk setiap field
       if (username !== undefined) {
         if (username.trim() === '') {
           return res.status(400).json({
@@ -487,7 +552,6 @@ app.post('/users/update', async (req, res) => {
           });
         }
         
-        // Validasi pattern username
         const usernamePattern = /^[a-zA-Z0-9_]{3,50}$/;
         if (!usernamePattern.test(username)) {
           return res.status(400).json({
@@ -496,7 +560,6 @@ app.post('/users/update', async (req, res) => {
           });
         }
         
-        // Cek username unik (kecuali untuk user saat ini)
         const usernameExists = await checkUsernameExists(username, id);
         if (usernameExists) {
           return res.status(400).json({
@@ -529,7 +592,6 @@ app.post('/users/update', async (req, res) => {
             message: 'Mohon isi pass terlebih dahulu'
           });
         }
-        // Hash password baru
         const hashedPassword = await bcrypt.hash(sanitizeInput(pass), 10);
         updateFields.push('pass = ?');
         updateValues.push(hashedPassword);
@@ -544,7 +606,7 @@ app.post('/users/update', async (req, res) => {
           });
         }
         updateFields.push('usertype = ?');
-        updateValues.push(usertype); // varchar(20), bukan parseInt
+        updateValues.push(usertype);
         updatedData.usertype = usertype;
       }
       
@@ -556,7 +618,7 @@ app.post('/users/update', async (req, res) => {
           });
         }
         updateFields.push('jenisuser = ?');
-        updateValues.push(parseInt(jenisuser)); // int
+        updateValues.push(parseInt(jenisuser));
         updatedData.jenisuser = parseInt(jenisuser);
       }
       
@@ -568,7 +630,7 @@ app.post('/users/update', async (req, res) => {
           });
         }
         updateFields.push('cabang = ?');
-        updateValues.push(parseInt(cabang)); // int
+        updateValues.push(parseInt(cabang));
         updatedData.cabang = parseInt(cabang);
       }
       
@@ -582,12 +644,8 @@ app.post('/users/update', async (req, res) => {
       const query = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
       const params = [...updateValues, parseInt(id)];
       
-      console.log('=== DEBUG UPDATE ===');
-      console.log('Request Body:', req.body);
-      console.log('Update Fields:', updateFields);
-      console.log('Final Query:', query);
+      console.log('Final Update Query:', query);
       console.log('Final Params:', params);
-      console.log('====================');
       
       db.query(query, params, (updateErr, result) => {
         if (updateErr) {
@@ -621,6 +679,10 @@ app.post('/users/update', async (req, res) => {
 // ==================== DELETE ENDPOINT ====================
 app.post('/users/delete', (req, res) => {
   try {
+    console.log('=== DELETE REQUEST ===');
+    console.log('Client IP:', req.ip || req.connection.remoteAddress);
+    console.log('Request Body:', req.body);
+    
     const { id, username } = req.body;
     
     // Validasi keamanan untuk parameter yang dikirim
@@ -647,7 +709,6 @@ app.post('/users/delete', (req, res) => {
     let params = [];
     let searchBy = '';
     
-    // Prioritas: jika ada username yang valid, gunakan username (karena unik)
     if (hasValidUsername) {
       query += 'username = ?';
       params = [sanitizeInput(username)];
@@ -658,14 +719,8 @@ app.post('/users/delete', (req, res) => {
       searchBy = `ID ${id}`;
     }
     
-    console.log('=== DEBUG DELETE SEARCH ===');
-    console.log('Request Body:', req.body);
-    console.log('Has Valid ID:', hasValidId);
-    console.log('Has Valid Username:', hasValidUsername);
     console.log('Search Query:', query);
     console.log('Search Params:', params);
-    console.log('Search By:', searchBy);
-    console.log('==============================');
     
     // Cek apakah user ada sebelum dihapus
     db.query(query, params, (err, results) => {
@@ -688,15 +743,12 @@ app.post('/users/delete', (req, res) => {
       const deleteId = userData.id;
       const deleteUsername = userData.username;
       
-      // Delete user berdasarkan ID (untuk memastikan tepat sasaran)
+      // Delete user berdasarkan ID
       const deleteQuery = 'DELETE FROM users WHERE id = ?';
       const deleteParams = [deleteId];
       
-      console.log('=== DEBUG DELETE ACTION ===');
       console.log('Delete Query:', deleteQuery);
       console.log('Delete Params:', deleteParams);
-      console.log('Will Delete:', userData);
-      console.log('============================');
       
       db.query(deleteQuery, deleteParams, (deleteErr, result) => {
         if (deleteErr) {
@@ -728,10 +780,27 @@ app.post('/users/delete', (req, res) => {
   }
 });
 
-// Start server
+// Start server dengan binding ke semua interface
 const PORT = process.env.PORT || 4999;
-app.listen(PORT, () => {
-  console.log('🚀 Server berjalan di http://localhost:' + PORT);
+const HOST = '0.0.0.0'; // Bind ke semua interface network
+
+app.listen(PORT, HOST, () => {
+  const localIPs = getLocalIPAddress();
+  
+  console.log('🚀 SERVER STARTED SUCCESSFULLY!');
+  console.log('');
+  console.log('🌐 ACCESS URLs:');
+  console.log(`📍 Localhost: http://localhost:${PORT}`);
+  console.log(`📍 Local Network: http://127.0.0.1:${PORT}`);
+  
+  // Tampilkan semua IP lokal yang tersedia
+  if (localIPs.length > 0) {
+    console.log('📍 Local IP Addresses:');
+    localIPs.forEach(ip => {
+      console.log(`   🔗 http://${ip}:${PORT}`);
+    });
+  }
+  
   console.log('');
   console.log('🔒 SECURITY FEATURES ENABLED:');
   console.log('✅ HTML/JavaScript injection protection');
@@ -742,28 +811,22 @@ app.listen(PORT, () => {
   console.log('✅ Username pattern validation (alphanumeric + underscore only)');
   console.log('✅ Input sanitization');
   console.log('✅ Length validation (max 255 characters)');
+  console.log('✅ CORS enabled for cross-origin requests');
   console.log('');
-  console.log('📡 CREATE Endpoint: POST http://localhost:' + PORT + '/users/create');
-  console.log('📡 READ Endpoint: GET http://localhost:' + PORT + '/users/read');
-  console.log('📡 UPDATE Endpoint: POST http://localhost:' + PORT + '/users/update');
-  console.log('📡 DELETE Endpoint: POST http://localhost:' + PORT + '/users/delete');
+  console.log('📡 API ENDPOINTS:');
+  console.log(`📡 CREATE: POST /users/create`);
+  console.log(`📡 READ (GET): GET /users/read`);
+  console.log(`📡 READ (POST): POST /users/read`);
+  console.log(`📡 UPDATE: POST /users/update`);
+  console.log(`📡 DELETE: POST /users/delete`);
+  console.log(`📡 SERVER INFO: GET /`);
   console.log('');
-  console.log('⚠️  BLOCKED INPUT EXAMPLES:');
-  console.log('❌ alert("hello")       - JavaScript function');
-  console.log('❌ <script>code</script> - HTML script tag');
-  console.log('❌ javascript:alert()   - JavaScript protocol');
-  console.log('❌ http://example.com   - URL/link');
-  console.log('❌ onclick=alert()      - Event handler');
-  console.log('❌ user{malicious}      - Special characters');
-  console.log('❌ admin(); DROP TABLE  - SQL injection attempt');
+  console.log('💡 TESTING FROM EXTERNAL IP:');
+  console.log('1. Pastikan firewall mengizinkan koneksi ke port', PORT);
+  console.log('2. Gunakan IP address yang ditampilkan di atas');
+  console.log('3. Test dengan Postman menggunakan format: http://[IP_ADDRESS]:' + PORT);
   console.log('');
-  console.log('✅ ALLOWED INPUT EXAMPLES:');
-  console.log('✅ john_doe             - Alphanumeric with underscore');
-  console.log('✅ admin123             - Alphanumeric');
-  console.log('✅ user_staff_2024      - Valid username pattern');
-  console.log('✅ Jakarta Pusat        - Normal text (for userdesc, jenisuser, cabang)');
-  console.log('');
-  console.log('🔧 Server siap digunakan dengan proteksi keamanan!');
+  console.log('🔧 Server siap digunakan dari localhost dan IP eksternal!');
 });
 
 module.exports = app;
