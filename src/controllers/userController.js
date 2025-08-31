@@ -151,6 +151,75 @@ class UserController {
     }
   }
 
+  // Login user
+  static async login(req, res) {
+    try {
+      console.log('🔥 LOGIN ENDPOINT DIAKSES');
+      
+      const { username, pass } = req.body;
+      
+      // Validasi input
+      if (!username || !pass) {
+        return res.status(400).json({
+          success: false,
+          message: 'Username dan password harus diisi'
+        });
+      }
+      
+      // Sanitize input
+      const sanitizedUsername = sanitizeInput(username);
+      const sanitizedPassword = sanitizeInput(pass);
+      
+      // Cek apakah username ada di database
+      const user = await User.getUserByUsername(sanitizedUsername);
+      
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: 'Username tidak ditemukan',
+          error_code: 'USERNAME_NOT_FOUND'
+        });
+      }
+      
+      // Verifikasi password menggunakan bcrypt
+      const bcrypt = require('bcryptjs');
+      const isPasswordValid = await bcrypt.compare(sanitizedPassword, user.pass);
+      
+      if (!isPasswordValid) {
+        return res.status(401).json({
+          success: false,
+          message: 'Password salah',
+          error_code: 'INVALID_PASSWORD'
+        });
+      }
+      
+      // Login berhasil - tampilkan data user (tanpa password)
+      const userData = {
+        id: user.id,
+        username: user.username,
+        userdesc: user.userdesc,
+        usertype: user.usertype,
+        jenisuser: user.jenisuser,
+        cabang: user.cabang,
+        cookie1: user.cookie1
+      };
+      
+      res.json({
+        success: true,
+        message: 'Login berhasil',
+        data: userData,
+        login_time: new Date().toLocaleString('id-ID', {timeZone: 'Asia/Jakarta'})
+      });
+      
+    } catch (error) {
+      console.error('❌ Login error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Terjadi kesalahan server'
+      });
+    }
+  }
+
   // Delete user
   static async delete(req, res) {
     try {

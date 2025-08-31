@@ -36,6 +36,7 @@ app.listen(PORT, HOST, () => {
   console.log(`3. POST http://localhost:${PORT}/users/read`);
   console.log(`4. POST http://localhost:${PORT}/users/update`);
   console.log(`5. POST http://localhost:${PORT}/users/delete`);
+  console.log(`6. POST http://localhost:${PORT}/users/login`);
   console.log('');
   console.log('📊 LOGGING ENDPOINTS:');
   console.log(`1. GET  http://localhost:${PORT}/api/logs/recent`);

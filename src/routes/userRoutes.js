@@ -9,4 +9,7 @@ router.post('/read', UserController.read);   // POST untuk body params
 router.post('/update', UserController.update);
 router.post('/delete', UserController.delete); // Bisa delete via ID atau username
 
+// Login route
+router.post('/login', UserController.login);
+
 module.exports = router;

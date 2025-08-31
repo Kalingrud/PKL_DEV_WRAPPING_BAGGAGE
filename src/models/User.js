@@ -23,6 +23,21 @@ class User {
     });
   }
 
+  // Get user by username for login
+  static async getUserByUsername(username) {
+    return new Promise((resolve, reject) => {
+      const query = 'SELECT id, username, userdesc, pass, usertype, jenisuser, cabang, cookie1 FROM users WHERE username = ?';
+      
+      db.query(query, [username], (err, results) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(results.length > 0 ? results[0] : null);
+        }
+      });
+    });
+  }
+
   // Create new user
   static async create(userData) {
     return new Promise(async (resolve, reject) => {
@@ -95,7 +110,8 @@ class User {
         queryParams.push(usertype);
       }
       
-      if (jenisuser) {
+      if (jenisuser !== undefined) {
+        query += ' AND jenisuser = ?';
         queryParams.push(parseInt(jenisuser));
       }
       

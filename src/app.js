@@ -62,7 +62,8 @@ app.get('/', (req, res) => {
         read_get: 'GET /users/read',
         read_post: 'POST /users/read',
         update: 'POST /users/update',
-        delete: 'POST /users/delete'
+        delete: 'POST /users/delete',
+        login: 'POST /users/login'
       },
       logs: {
         recent: 'GET /api/logs/recent',
