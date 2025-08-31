@@ -96,7 +96,6 @@ class User {
       }
       
       if (jenisuser) {
-        query += ' AND jenisuser = ?';
         queryParams.push(parseInt(jenisuser));
       }
       
@@ -105,7 +104,7 @@ class User {
         queryParams.push(parseInt(cabang));
       }
       
-      query += ' ORDER BY id ASC';
+      query += ' ORDER BY username ASC';
       
       db.query(query, queryParams, (err, results) => {
         if (err) {
@@ -184,8 +183,8 @@ class User {
     });
   }
 
-  // Delete user
-  static async delete(id) {
+  // Delete user by ID
+  static async deleteById(id) {
     return new Promise((resolve, reject) => {
       const deleteQuery = 'DELETE FROM users WHERE id = ?';
       
@@ -197,6 +196,31 @@ class User {
         }
       });
     });
+  }
+
+  // Delete user by username
+  static async deleteByUsername(username) {
+    return new Promise((resolve, reject) => {
+      const deleteQuery = 'DELETE FROM users WHERE username = ?';
+      
+      db.query(deleteQuery, [username], (err, result) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve({ username, affectedRows: result.affectedRows });
+        }
+      });
+    });
+  }
+
+  // Delete user (flexible - by ID or username)
+  static async delete(identifier) {
+    // Check if identifier is numeric (ID) or string (username)
+    if (!isNaN(identifier) && parseInt(identifier) > 0) {
+      return this.deleteById(parseInt(identifier));
+    } else {
+      return this.deleteByUsername(identifier);
+    }
   }
 }
 

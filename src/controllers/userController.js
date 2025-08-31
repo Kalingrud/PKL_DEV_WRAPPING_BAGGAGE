@@ -156,30 +156,42 @@ class UserController {
     try {
       console.log('🔥 DELETE ENDPOINT DIAKSES');
       
-      const { id } = req.body;
-      if (!id) {
+      const { id, username } = req.body;
+      
+      // Bisa delete berdasarkan ID atau username
+      if (!id && !username) {
         return res.status(400).json({
           success: false,
-          message: 'Mohon isi id terlebih dahulu'
+          message: 'Mohon isi id atau username terlebih dahulu'
         });
       }
       
+      let identifier = id || username;
+      let searchField = id ? 'id' : 'username';
+      
       // Check if user exists
-      const existingUsers = await User.read({ id });
+      let existingUsers;
+      if (searchField === 'id') {
+        existingUsers = await User.read({ id: identifier });
+      } else {
+        existingUsers = await User.read({ username: identifier });
+      }
+      
       if (existingUsers.length === 0) {
         return res.status(404).json({
           success: false,
-          message: 'User tidak ditemukan'
+          message: `User dengan ${searchField} "${identifier}" tidak ditemukan`
         });
       }
       
       // Delete user
-      const result = await User.delete(id);
+      const result = await User.delete(identifier);
       
       res.json({
         success: true,
-        message: 'User berhasil dihapus',
-        data: result
+        message: `User dengan ${searchField} "${identifier}" berhasil dihapus`,
+        data: result,
+        deleted_user: existingUsers[0]
       });
       
     } catch (error) {

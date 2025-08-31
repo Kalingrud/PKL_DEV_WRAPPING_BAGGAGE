@@ -65,7 +65,7 @@ npm start
 - `GET /users/read` - Baca data user (dengan query params)
 - `POST /users/read` - Baca data user (dengan body params)
 - `POST /users/update` - Update data user
-- `POST /users/delete` - Hapus user
+- `POST /users/delete` - Hapus user (bisa via ID atau username)
 
 ### API Logging
 - `GET /api/logs/recent` - Ambil log terbaru
@@ -152,7 +152,37 @@ curl http://localhost:4999/test/unauthorized
 curl -X POST http://localhost:4999/users/create \
   -H "Content-Type: application/json" \
   -d '{"username":"test","userdesc":"Test User","pass":"password123","usertype":"admin","jenisuser":1,"cabang":1}'
+
+# Read users (GET dengan query params)
+curl "http://localhost:4999/users/read?username=mansur"
+
+# Read users (POST dengan body params)
+curl -X POST http://localhost:4999/users/read \
+  -H "Content-Type: application/json" \
+  -d '{"username":"mansur"}'
+
+# Delete user via ID
+curl -X POST http://localhost:4999/users/delete \
+  -H "Content-Type: application/json" \
+  -d '{"id":123}'
+
+# Delete user via username
+curl -X POST http://localhost:4999/users/delete \
+  -H "Content-Type: application/json" \
+  -d '{"username":"mansur"}'
 ```
+
+## 🔍 Fitur Pencarian Username
+
+### **Method READ:**
+- **GET /users/read?username=mansur** - Mencari username yang mengandung "mansur"
+- **POST /users/read** dengan body `{"username":"mansur"}` - Sama seperti GET
+- Hasil: akan menampilkan mansur1, mansur2, mansur_admin, dll (jika ada)
+
+### **Method DELETE:**
+- **POST /users/delete** dengan body `{"id":123}` - Hapus berdasarkan ID
+- **POST /users/delete** dengan body `{"username":"mansur"}` - Hapus berdasarkan username
+- Username bersifat unik, jadi bisa langsung dihapus tanpa perlu cek ID
 
 ## 📚 Dependencies
 
