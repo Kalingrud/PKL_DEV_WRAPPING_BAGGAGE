@@ -7,9 +7,12 @@ const dbConfig = {
   password: 'Pkl_dev123!',
   database: 'pkl_wrapping',
   connectionLimit: 10,
-  acquireTimeout: 60000,
-  timeout: 60000,
-  reconnect: true
+  // Option yang valid untuk mysql2 connection pool
+  acquireTimeout: 60000,    // Waktu maksimal untuk dapat koneksi (60 detik)
+  waitForConnections: true, // Tunggu jika pool penuh
+  queueLimit: 0,            // Tidak ada batas antrian
+  enableKeepAlive: true,    // Aktifkan keep-alive
+  keepAliveInitialDelay: 0  // Keep-alive langsung aktif
 };
 
 // Buat connection pool
