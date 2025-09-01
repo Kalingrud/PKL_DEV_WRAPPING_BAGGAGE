@@ -5,7 +5,7 @@ class UserController {
   // Create user
   static async create(req, res) {
     try {
-      console.log('🔥 CREATE ENDPOINT DIAKSES');
+      console.log('CREATE endpoint accessed');
       
       const requiredFields = ['username', 'userdesc', 'pass', 'usertype', 'jenisuser', 'cabang'];
       if (!validateRequiredFields(req, res, requiredFields)) {
@@ -49,7 +49,7 @@ class UserController {
       });
       
     } catch (error) {
-      console.error('❌ Create error:', error);
+      console.error('Create error:', error.message);
       res.status(500).json({
         success: false,
         message: 'Terjadi kesalahan server'
@@ -60,7 +60,7 @@ class UserController {
   // Read users
   static async read(req, res) {
     try {
-      console.log('🔥 READ ENDPOINT DIAKSES');
+      console.log('READ endpoint accessed');
       
       const params = req.method === 'GET' ? req.query : req.body;
       
@@ -88,7 +88,7 @@ class UserController {
       });
       
     } catch (error) {
-      console.error('❌ Read error:', error);
+      console.error('Read error:', error.message);
       res.status(500).json({
         success: false,
         message: 'Terjadi kesalahan server'
@@ -99,7 +99,7 @@ class UserController {
   // Update user
   static async update(req, res) {
     try {
-      console.log('🔥 UPDATE ENDPOINT DIAKSES');
+      console.log('UPDATE endpoint accessed');
       
       const { id } = req.body;
       if (!id) {
@@ -143,7 +143,7 @@ class UserController {
       });
       
     } catch (error) {
-      console.error('❌ Update error:', error);
+      console.error('Update error:', error.message);
       res.status(500).json({
         success: false,
         message: 'Terjadi kesalahan server'
@@ -223,7 +223,7 @@ class UserController {
   // Delete user
   static async delete(req, res) {
     try {
-      console.log('🔥 DELETE ENDPOINT DIAKSES');
+      console.log('DELETE endpoint accessed');
       
       const { id, username } = req.body;
       
@@ -264,7 +264,7 @@ class UserController {
       });
       
     } catch (error) {
-      console.error('❌ Delete error:', error);
+      console.error('Delete error:', error.message);
       res.status(500).json({
         success: false,
         message: 'Terjadi kesalahan server'

@@ -27,14 +27,7 @@ app.use(express.json());
 
 // Debug middleware
 app.use((req, res, next) => {
-  console.log('');
-  console.log('🔥 ======= REQUEST MASUK =======');
-  console.log('🕐 Waktu:', new Date().toLocaleString('id-ID', {timeZone: 'Asia/Jakarta'}));
-  console.log('🌐 IP:', req.ip || req.connection.remoteAddress || 'unknown');
-  console.log('📱 Method:', req.method);
-  console.log('🎯 Path:', req.path);
-  console.log('🔍 User-Agent:', req.headers['user-agent'] || 'unknown');
-  console.log('================================');
+  console.log(`${req.method} ${req.path} - ${req.ip || 'unknown'}`);
   next();
 });
 

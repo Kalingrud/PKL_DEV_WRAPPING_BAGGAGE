@@ -45,12 +45,11 @@ const apiLogMiddleware = (req, res, next) => {
       // Insert ke database
       const logId = await ApiLog.create(logData);
       
-      console.log(`📝 API Log tersimpan dengan ID: ${logId}`);
-      console.log(`⏰ Incoming: ${logData.incoming} | Outgoing: ${logData.outgoing} | Duration: ${logData.duration}`);
-      console.log(`🌐 ${logData.url_method} ${logData.url_hit} dari IP: ${logData.from_ip}`);
+      console.log(`Log saved: ${logId}`);
+      console.log(`${logData.url_method} ${logData.url_hit} - ${logData.duration}`);
       
     } catch (error) {
-      console.error('❌ Error saat menyimpan API log:', error);
+      console.error('Error saving log:', error.message);
     }
   });
   

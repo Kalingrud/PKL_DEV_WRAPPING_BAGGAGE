@@ -21,10 +21,10 @@ const pool = mysql.createPool(dbConfig);
 // Test koneksi
 pool.getConnection((err, connection) => {
   if (err) {
-    console.error('❌ Error connecting to database:', err);
+    console.error('DB connection error:', err.message);
     return;
   }
-  console.log('✅ Connected to MySQL database');
+  console.log('Database connected');
   connection.release();
 });
 
