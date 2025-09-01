@@ -27,9 +27,9 @@ Pr pa harit
 
 Senin 1 september pagi, sudah harus selesai
 1. Perbaikan table
--semua table dibuat
--semua field disamakan
--semua tipe data disesuaikan
+-semua table dibuat✅
+-semua field disamakan✅
+-semua tipe data disesuaikan✅
 
 2. hit endpoint teman
 -Kalingga hit endpoint ipat✅
@@ -37,11 +37,11 @@ Senin 1 september pagi, sudah harus selesai
 -test semua fungsi endpoint
 
 3. buat endpoint login
-- buat route login
-- buat parameter ussername dan password postman
--check apakah parameter sudah masuk ke routing
-- buat validasi username dan password
-- ussername berhasil menampilkan row data username tersebut.
-- jika berhasil, maka sistem akan menampilkan row data username tersebut
-- jika gagal, maka menampilkan username tidak ditemukan.
+- buat route login✅
+- buat parameter ussername dan password postman✅
+-check apakah parameter sudah masuk ke routing✅
+- buat validasi username dan password✅
+- ussername berhasil menampilkan row data username tersebut.✅
+- jika berhasil, maka sistem akan menampilkan row data username tersebut✅
+- jika gagal, maka menampilkan username tidak ditemukan.✅
 
