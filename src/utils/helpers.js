@@ -30,10 +30,11 @@ const getLocalIPAddress = () => {
   return results;
 };
 
-// Format duration dengan 2 desimal
+// Format duration dengan angka desimal (dalam detik)
 const formatDuration = (startTime, endTime) => {
   const durationMs = endTime - startTime;
-  return `${durationMs.toFixed(2)} ms`;
+  const durationSeconds = durationMs / 1000;
+  return durationSeconds.toFixed(4); // 4 desimal untuk presisi yang cukup
 };
 
 module.exports = {
