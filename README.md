@@ -23,9 +23,9 @@ Pr pa harit
 Pr pa harit 
 29 Agustus 2025
 - coba ngehit ip laptop lain di postman ✅
-- api_log
+- api_log✅
 
-Senin 1 september pagi, sudah harus selesai
+Senin 1 september pagi, sudah harus selesai 
 1. Perbaikan table
 -semua table dibuat✅
 -semua field disamakan✅
