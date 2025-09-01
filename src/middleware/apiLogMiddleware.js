@@ -29,7 +29,7 @@ const apiLogMiddleware = (req, res, next) => {
         from_ip: req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for'] || 'unknown',
         duration: duration,
         url_method: req.method,
-        url_hit: req.path,
+        url_hit: req.originalUrl || req.url,
         url_full: `http://192.168.100.56:4999${req.originalUrl || req.url}`,
         req_post: req.method === 'POST' ? JSON.stringify(req.body) : null,
         req_get: req.method === 'GET' ? (Object.keys(req.query).length > 0 ? JSON.stringify(req.query) : '[]') : '[]',
