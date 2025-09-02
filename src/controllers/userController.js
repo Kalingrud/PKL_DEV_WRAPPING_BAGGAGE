@@ -161,8 +161,11 @@ class UserController {
       // Validasi input
       if (!username || !pass) {
         return res.status(400).json({
+          code: 400,
+          message: 'Username dan password harus diisi',
+          data: null,
           success: false,
-          message: 'Username dan password harus diisi'
+          code_message: 'Bad Request'
         });
       }
       
@@ -175,9 +178,12 @@ class UserController {
       
       if (!user) {
         return res.status(401).json({
-          success: false,
+          code: 401,
           message: 'Username tidak ditemukan',
-          error_code: 'USERNAME_NOT_FOUND'
+          data: null,
+          success: false,
+          error_code: 'USERNAME_NOT_FOUND',
+          code_message: 'Unauthorized'
         });
       }
       
@@ -187,9 +193,12 @@ class UserController {
       
       if (!isPasswordValid) {
         return res.status(401).json({
-          success: false,
+          code: 401,
           message: 'Password salah',
-          error_code: 'INVALID_PASSWORD'
+          data: null,
+          success: false,
+          error_code: 'INVALID_PASSWORD',
+          code_message: 'Unauthorized'
         });
       }
       
@@ -204,18 +213,23 @@ class UserController {
         cookie1: user.cookie1
       };
       
-      res.json({
-        success: true,
+      return res.status(200).json({
+        code: 200,
         message: 'Login berhasil',
         data: userData,
+        code_message: 'OK',
+        success: true,
         login_time: new Date().toLocaleString('id-ID', {timeZone: 'Asia/Jakarta'})
       });
       
     } catch (error) {
       console.error('❌ Login error:', error);
-      res.status(500).json({
+      return res.status(500).json({
+        code: 500,
+        message: 'Terjadi kesalahan server',
+        data: null,
         success: false,
-        message: 'Terjadi kesalahan server'
+        code_message: 'Internal Server Error'
       });
     }
   }
