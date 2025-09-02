@@ -60,3 +60,36 @@ contoh varchar : '-'
     ]
 }
 
+Contoh agent_detect :
+{
+    "CONTENT_TYPE": "application/x-www-form-urlencoded",
+    "CONTENT_LENGTH": "22",
+    "HTTP_HOST": "103.90.248.246",
+    "HTTP_CONNECTION": "Keep-Alive",
+    "HTTP_ACCEPT_ENCODING": "gzip",
+    "HTTP_USER_AGENT": "okhttp/3.10.0",
+    "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin",
+    "SERVER_SIGNATURE": "<address>Apache/2.4.41 (Ubuntu) Server at 103.90.248.246 Port 80</address>
+",
+    "SERVER_SOFTWARE": "Apache/2.4.41 (Ubuntu)",
+    "SERVER_NAME": "103.90.248.246",
+    "SERVER_ADDR": "192.168.80.100",
+    "SERVER_PORT": "80",
+    "REMOTE_ADDR": "103.82.14.5",
+    "DOCUMENT_ROOT": "/var/www/html",
+    "REQUEST_SCHEME": "http",
+    "CONTEXT_PREFIX": "",
+    "CONTEXT_DOCUMENT_ROOT": "/var/www/html",
+    "SERVER_ADMIN": "webmaster@localhost",
+    "SCRIPT_FILENAME": "/var/www/html/wrapapk/Grab_Setup.php",
+    "REMOTE_PORT": "28208",
+    "GATEWAY_INTERFACE": "CGI/1.1",
+    "SERVER_PROTOCOL": "HTTP/1.1",
+    "REQUEST_METHOD": "POST",
+    "QUERY_STRING": "",
+    "REQUEST_URI": "/wrapapk/Grab_Setup.php",
+    "SCRIPT_NAME": "/wrapapk/Grab_Setup.php",
+    "PHP_SELF": "/wrapapk/Grab_Setup.php",
+    "REQUEST_TIME_FLOAT": 1745913079.717708,
+    "REQUEST_TIME": 1745913079
+}
