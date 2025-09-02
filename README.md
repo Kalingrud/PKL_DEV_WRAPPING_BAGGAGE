@@ -93,3 +93,15 @@ Contoh agent_detect :
     "REQUEST_TIME_FLOAT": 1745913079.717708,
     "REQUEST_TIME": 1745913079
 }
+
+
+masalah:
+parameter get gak ke isi di req get
+
+solusi: 
+1.cari kode yang menangani req get
+2.tambahin script untuk ngebaca parameter get
+3.tes endpoint
+4.ngecek scripnya sudah dapet parameternya atau belum
+5.buat kode untuk insert ke database
+6.cek ke database sudah insert atau belum
