@@ -31,8 +31,8 @@ Senin 1 september pagi, sudah harus selesai
 -semua field disamakan✅
 -semua tipe data disesuaikan✅
 -perbaikan default value untuk datetime dan varchar
-contoh date time : '0000-00-00 00:00:00'
-contoh varchar : '-'
+contoh date time : '0000-00-00 00:00:00'✅
+contoh varchar : '-'✅
 
 2. hit endpoint teman
 -Kalingga hit endpoint ipat✅
@@ -47,7 +47,7 @@ contoh varchar : '-'
 - ussername berhasil menampilkan row data username tersebut.✅
 - jika berhasil, maka sistem akan menampilkan row data username tersebut✅
 - jika gagal, maka menampilkan username tidak ditemukan.✅
-- tambahkan http eror
+- tambahkan http eror✅
 - tambah kan respon code messege:
 
 {
