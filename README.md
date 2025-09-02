@@ -30,6 +30,9 @@ Senin 1 september pagi, sudah harus selesai
 -semua table dibuat✅
 -semua field disamakan✅
 -semua tipe data disesuaikan✅
+-perbaikan default value untuk datetime dan varchar 
+contoh date time : '0000-00-00 00:00:00'
+contoh varchar : '-'
 
 2. hit endpoint teman
 -Kalingga hit endpoint ipat✅
