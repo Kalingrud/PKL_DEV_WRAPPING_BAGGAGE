@@ -48,7 +48,7 @@ contoh varchar : '-'✅
 - jika berhasil, maka sistem akan menampilkan row data username tersebut✅
 - jika gagal, maka menampilkan username tidak ditemukan.✅
 - tambahkan http eror✅
-- tambah kan respon code messege:
+- tambah kan respon code messege:✅
 
 {
     "code":200
