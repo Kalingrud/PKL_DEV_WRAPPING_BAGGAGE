@@ -1,4 +1,4 @@
-## mandatoring 
+## mandatoring
 1.username ✅+
 2.userdesc✅
 3.pass✅
@@ -13,31 +13,31 @@ pr pak harit
 -parameternya harus sama seperti di database✅
 -read bisa select semua parameter✅
 
-Pr pa harit 
+Pr pa harit
 28 Agustus 2025
 -Mindahin tabel dari xampp ke navicat✅
 -Mindahin tabel users dari xampp ke navicat✅
 -konekin api ke navicat bukan ke xampp✅
 
 
-Pr pa harit 
+Pr pa harit
 29 Agustus 2025
 - coba ngehit ip laptop lain di postman ✅
 - api_log✅
 
-Senin 1 september pagi, sudah harus selesai 
+Senin 1 september pagi, sudah harus selesai
 1. Perbaikan table
 -semua table dibuat✅
 -semua field disamakan✅
 -semua tipe data disesuaikan✅
--perbaikan default value untuk datetime dan varchar 
+-perbaikan default value untuk datetime dan varchar
 contoh date time : '0000-00-00 00:00:00'
 contoh varchar : '-'
 
 2. hit endpoint teman
 -Kalingga hit endpoint ipat✅
 -ipat hit endpoint kalingga✅
--test semua fungsi endpoint
+-test semua fungsi endpoint✅
 
 3. buat endpoint login
 - buat route login✅
