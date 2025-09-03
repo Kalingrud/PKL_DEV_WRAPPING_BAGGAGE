@@ -9,8 +9,8 @@ router.get('/recent', async (req, res) => {
     const logs = await ApiLog.getRecentLogs(limit);
     
     res.json({
-      success: true,
-      message: 'Logs berhasil diambil',
+      code: 200,
+      message: 'OK',
       data: logs,
       count: logs.length
     });
@@ -30,8 +30,8 @@ router.get('/filter', async (req, res) => {
     const logs = await ApiLog.getLogsByFilter(filters);
     
     res.json({
-      success: true,
-      message: 'Logs berhasil difilter',
+      code: 200,
+      message: 'OK',
       data: logs,
       count: logs.length
     });
@@ -50,9 +50,9 @@ router.get('/test', async (req, res) => {
     const connectionOK = await ApiLog.testConnection();
     
     res.json({
-      success: true,
-      message: 'Connection test berhasil',
-      connection_status: connectionOK ? 'OK' : 'FAILED'
+      code: 200,
+      message: 'OK',
+      data: [{ connection_status: connectionOK ? 'OK' : 'FAILED' }]
     });
   } catch (error) {
     console.error('❌ Error testing connection:', error);

@@ -66,24 +66,28 @@ app.get('/', (req, res) => {
     }
   };
   
-  res.json(serverInfo);
+  res.json({ code: 200, message: 'OK', data: serverInfo });
 });
 
 // Test endpoints
 app.get('/test/log', (req, res) => {
   res.json({
-    success: true,
-    message: '🔥 Test logging endpoint berhasil diakses!',
-    info: 'Endpoint ini dibuat khusus untuk test apakah logging berjalan',
-    timestamp: new Date().toLocaleString('id-ID', {timeZone: 'Asia/Jakarta'}),
-    should_be_logged: true,
-    client_info: {
-      ip: req.ip || req.connection.remoteAddress || 'unknown',
-      user_agent: req.headers['user-agent'] || 'unknown',
-      method: req.method,
-      path: req.path,
-      query: req.query
-    }
+    code: 200,
+    message: 'OK',
+    data: [{
+      success: true,
+      message: '🔥 Test logging endpoint berhasil diakses!',
+      info: 'Endpoint ini dibuat khusus untuk test apakah logging berjalan',
+      timestamp: new Date().toLocaleString('id-ID', {timeZone: 'Asia/Jakarta'}),
+      should_be_logged: true,
+      client_info: {
+        ip: req.ip || req.connection.remoteAddress || 'unknown',
+        user_agent: req.headers['user-agent'] || 'unknown',
+        method: req.method,
+        path: req.path,
+        query: req.query
+      }
+    }]
   });
 });
 

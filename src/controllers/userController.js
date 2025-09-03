@@ -45,9 +45,9 @@ class UserController {
         username, userdesc, pass, usertype, jenisuser, cabang
       });
       
-      res.status(201).json({
-        code: 201,
-        message: 'Created',
+      res.status(200).json({
+        code: 200,
+        message: 'OK',
         data: [newUser]
       });
       
