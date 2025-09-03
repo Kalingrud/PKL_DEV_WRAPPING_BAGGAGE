@@ -37,8 +37,62 @@ const formatDuration = (startTime, endTime) => {
   return durationSeconds.toFixed(4); // 4 desimal untuk presisi yang cukup
 };
 
+// Mapping HTTP status code ke message
+const getHttpStatusMessage = (code) => {
+  const statusMessages = {
+    200: 'OK',
+    201: 'Created',
+    400: 'Bad Request',
+    401: 'Unauthorized',
+    403: 'Forbidden',
+    404: 'Not Found',
+    409: 'Conflict',
+    422: 'Unprocessable Entity',
+    500: 'Internal Server Error',
+    502: 'Bad Gateway',
+    503: 'Service Unavailable'
+  };
+  
+  return statusMessages[code] || 'Unknown';
+};
+
+// Helper function untuk response sukses (menggunakan HTTP status message)
+const successResponse = (data = null, additionalFields = {}) => {
+  const response = {
+    code: 200,
+    message: getHttpStatusMessage(200), // "OK"
+    data: data
+  };
+
+  // Tambahkan field tambahan jika ada
+  Object.keys(additionalFields).forEach(key => {
+    response[key] = additionalFields[key];
+  });
+
+  return response;
+};
+
+// Helper function untuk response error (menggunakan message dari aplikasi)
+const errorResponse = (code, appMessage, data = null, additionalFields = {}) => {
+  const response = {
+    code: code,
+    message: appMessage, // Message dari aplikasi/terminal
+    data: data
+  };
+
+  // Tambahkan field tambahan jika ada
+  Object.keys(additionalFields).forEach(key => {
+    response[key] = additionalFields[key];
+  });
+
+  return response;
+};
+
 module.exports = {
   formatDateTime,
   getLocalIPAddress,
-  formatDuration
+  formatDuration,
+  getHttpStatusMessage,
+  successResponse,
+  errorResponse
 };

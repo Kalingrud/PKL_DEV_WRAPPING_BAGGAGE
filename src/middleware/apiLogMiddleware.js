@@ -86,7 +86,7 @@ const apiLogMiddleware = (req, res, next) => {
         req_post: req.method === 'POST' ? (Object.keys(req.body || {}).length > 0 ? JSON.stringify(req.body) : '[]') : null,
         req_get: (req.query && Object.keys(req.query).length > 0) ? JSON.stringify(req.query) : '[]',
         outgoing: outgoingTime,
-        app_response: `[${res.statusCode}] ${typeof responseBody === 'string' ? responseBody : JSON.stringify(responseBody)}`,
+        app_response: typeof responseBody === 'string' ? responseBody : JSON.stringify(responseBody),
         geo_ip: '-',
         geo_long: req.headers['x-forwarded-for'] || req.geo?.longitude || '-',
         geo_lat: req.headers['x-forwarded-for'] || req.geo?.latitude || '-',
