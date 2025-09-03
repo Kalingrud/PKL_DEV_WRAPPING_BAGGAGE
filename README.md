@@ -119,3 +119,16 @@ solusi:
         "cabang": "1"
     }]
 }
+
+
+
+list to do save trx insert ke penjualan
+1.buat endpoint untuk save trx
+2.buat parameter di postman 
+3.buat route save trx
+4.buat kode untuk relasi parameter dan tabel yang wajib di relasi
+6.tes apakah sudah ter relasi
+7.buat kode untuk menginsert data data dari parameter ke tabel penjualan
+8.buat kode untuk coloumn uang fungsi perkalian di coloumn qty dan pack type 
+9.buat kode generate random dengan mengambil value datetime
+10.tes backend
