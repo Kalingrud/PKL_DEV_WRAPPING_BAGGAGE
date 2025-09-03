@@ -1,6 +1,6 @@
 const User = require('../models/User');
 const { validateRequiredFields, validateFieldSecurity, sanitizeInput } = require('../utils/security');
-const { successResponse, errorResponse } = require('../utils/helpers');
+// Helper functions sudah tidak digunakan lagi karena response dibuat langsung
 
 class UserController {
   // Create user
@@ -23,13 +23,21 @@ class UserController {
       // Check username exists
       const usernameExists = await User.checkUsernameExists(username);
       if (usernameExists) {
-        return res.status(400).json(errorResponse(400, 'Username sudah digunakan'));
+        return res.status(400).json({
+          code: 400,
+          message: 'Username sudah digunakan',
+          data: []
+        });
       }
       
       // Validate username pattern
       const usernamePattern = /^[a-zA-Z0-9_]{3,50}$/;
       if (!usernamePattern.test(username)) {
-        return res.status(400).json(errorResponse(400, 'Username hanya boleh mengandung huruf, angka, dan underscore (3-50 karakter)'));
+        return res.status(400).json({
+          code: 400,
+          message: 'Username hanya boleh mengandung huruf, angka, dan underscore (3-50 karakter)',
+          data: []
+        });
       }
       
       // Create user
@@ -37,11 +45,19 @@ class UserController {
         username, userdesc, pass, usertype, jenisuser, cabang
       });
       
-      res.status(201).json(successResponse('User berhasil dibuat', newUser));
+      res.status(201).json({
+        code: 201,
+        message: 'Created',
+        data: [newUser]
+      });
       
     } catch (error) {
       console.error('Create error:', error.message);
-      res.status(500).json(errorResponse(500, 'Terjadi kesalahan server'));
+      res.status(500).json({
+        code: 500,
+        message: 'Terjadi kesalahan server',
+        data: []
+      });
     }
   }
 
@@ -57,7 +73,11 @@ class UserController {
         if (value && typeof value === 'string') {
           const sanitizedValue = sanitizeInput(value);
           if (sanitizedValue !== value) {
-            return res.status(400).json(errorResponse(400, `${key} tidak boleh mengandung karakter berbahaya`));
+            return res.status(400).json({
+              code: 400,
+              message: `${key} tidak boleh mengandung karakter berbahaya`,
+              data: []
+            });
           }
         }
       }
@@ -65,11 +85,19 @@ class UserController {
       // Get users with filters
       const users = await User.read(params);
       
-      res.json(successResponse('Data berhasil diambil', users, { count: users.length }));
+      res.json({
+        code: 200,
+        message: 'OK',
+        data: users
+      });
       
     } catch (error) {
       console.error('Read error:', error.message);
-      res.status(500).json(errorResponse(500, 'Terjadi kesalahan server'));
+      res.status(500).json({
+        code: 500,
+        message: 'Terjadi kesalahan server',
+        data: []
+      });
     }
   }
 
@@ -80,7 +108,11 @@ class UserController {
       
       const { id } = req.body;
       if (!id) {
-        return res.status(400).json(errorResponse(400, 'Mohon isi id terlebih dahulu'));
+        return res.status(400).json({
+          code: 400,
+          message: 'Mohon isi id terlebih dahulu',
+          data: []
+        });
       }
       
       if (!validateFieldSecurity(req, res)) {
@@ -90,25 +122,41 @@ class UserController {
       // Check if user exists
       const existingUsers = await User.read({ id });
       if (existingUsers.length === 0) {
-        return res.status(404).json(errorResponse(404, 'User tidak ditemukan'));
+        return res.status(404).json({
+          code: 404,
+          message: 'User tidak ditemukan',
+          data: []
+        });
       }
       
       // Check username uniqueness if updating username
       if (req.body.username) {
         const usernameExists = await User.checkUsernameExists(req.body.username, id);
         if (usernameExists) {
-          return res.status(400).json(errorResponse(400, 'Username sudah digunakan'));
+          return res.status(400).json({
+            code: 400,
+            message: 'Username sudah digunakan',
+            data: []
+          });
         }
       }
       
       // Update user
       const result = await User.update(id, req.body);
       
-      res.json(successResponse('User berhasil diupdate', result));
+      res.json({
+        code: 200,
+        message: 'OK',
+        data: [result]
+      });
       
     } catch (error) {
       console.error('Update error:', error.message);
-      res.status(500).json(errorResponse(500, 'Terjadi kesalahan server'));
+      res.status(500).json({
+        code: 500,
+        message: 'Terjadi kesalahan server',
+        data: []
+      });
     }
   }
 
@@ -121,7 +169,11 @@ class UserController {
       
       // Validasi input
       if (!username || !pass) {
-        return res.status(400).json(errorResponse(400, 'Username dan password harus diisi'));
+        return res.status(400).json({
+          code: 400,
+          message: 'Username dan password harus diisi',
+          data: []
+        });
       }
       
       // Sanitize input
@@ -132,7 +184,11 @@ class UserController {
       const user = await User.getUserByUsername(sanitizedUsername);
       
       if (!user) {
-        return res.status(401).json(errorResponse(401, 'Username tidak ditemukan'));
+        return res.status(401).json({
+          code: 401,
+          message: 'Username tidak ditemukan',
+          data: []
+        });
       }
       
       // Verifikasi password menggunakan bcrypt
@@ -140,7 +196,11 @@ class UserController {
       const isPasswordValid = await bcrypt.compare(sanitizedPassword, user.pass);
       
       if (!isPasswordValid) {
-        return res.status(401).json(errorResponse(401, 'Password salah'));
+        return res.status(401).json({
+          code: 401,
+          message: 'Password salah',
+          data: []
+        });
       }
       
       // Login berhasil - tampilkan data user (tanpa password)
@@ -154,9 +214,12 @@ class UserController {
         cookie1: user.cookie1
       };
       
-      return res.status(200).json(successResponse('Login berhasil', userData, {
+      return res.status(200).json({
+        code: 200,
+        message: 'OK',
+        data: [userData],
         login_time: new Date().toLocaleString('id-ID', {timeZone: 'Asia/Jakarta'})
-      }));
+      });
       
     } catch (error) {
       console.error('❌ Login error:', error);
@@ -173,7 +236,11 @@ class UserController {
       
       // Bisa delete berdasarkan ID atau username
       if (!id && !username) {
-        return res.status(400).json(errorResponse(400, 'Mohon isi id atau username terlebih dahulu'));
+        return res.status(400).json({
+          code: 400,
+          message: 'Mohon isi id atau username terlebih dahulu',
+          data: []
+        });
       }
       
       let identifier = id || username;
@@ -188,19 +255,30 @@ class UserController {
       }
       
       if (existingUsers.length === 0) {
-        return res.status(404).json(errorResponse(404, `User dengan ${searchField} "${identifier}" tidak ditemukan`));
+        return res.status(404).json({
+          code: 404,
+          message: `User dengan ${searchField} "${identifier}" tidak ditemukan`,
+          data: []
+        });
       }
       
       // Delete user
       const result = await User.delete(identifier);
       
-      res.json(successResponse(`User dengan ${searchField} "${identifier}" berhasil dihapus`, result, {
+      res.json({
+        code: 200,
+        message: 'OK',
+        data: [result],
         deleted_user: existingUsers[0]
-      }));
+      });
       
     } catch (error) {
       console.error('Delete error:', error.message);
-      res.status(500).json(errorResponse(500, 'Terjadi kesalahan server'));
+      res.status(500).json({
+        code: 500,
+        message: 'Terjadi kesalahan server',
+        data: []
+      });
     }
   }
 }

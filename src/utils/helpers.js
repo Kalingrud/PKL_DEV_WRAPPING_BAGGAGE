@@ -57,11 +57,11 @@ const getHttpStatusMessage = (code) => {
 };
 
 // Helper function untuk response sukses (menggunakan HTTP status message)
-const successResponse = (data = null, additionalFields = {}) => {
+const successResponse = (message, data = null, additionalFields = {}) => {
   const response = {
     code: 200,
-    message: getHttpStatusMessage(200), // "OK"
-    data: data
+    message: getHttpStatusMessage(200), // "OK" dari HTTP status
+    data: data ? [data] : []
   };
 
   // Tambahkan field tambahan jika ada
@@ -76,8 +76,8 @@ const successResponse = (data = null, additionalFields = {}) => {
 const errorResponse = (code, appMessage, data = null, additionalFields = {}) => {
   const response = {
     code: code,
-    message: appMessage, // Message dari aplikasi/terminal
-    data: data
+    message: appMessage, // Message dari aplikasi
+    data: data ? [data] : []
   };
 
   // Tambahkan field tambahan jika ada
