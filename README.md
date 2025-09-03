@@ -48,14 +48,14 @@ contoh varchar : '-'✅
 - jika berhasil, maka sistem akan menampilkan row data username tersebut✅
 - jika gagal, maka menampilkan username tidak ditemukan.✅
 - tambahkan http eror✅
-- tambah kan respon code messege:✅
+- tambah kan respon code messege di semua respon:
 
 {
     "code":200
     "messege":"OK"
     "data":[
     {
-        1:1
+        data 
     }
     ]
 }
@@ -105,3 +105,17 @@ solusi:
 4.ngecek scripnya sudah dapet parameternya atau belum
 5.buat kode untuk insert ke database
 6.cek ke database sudah insert atau belum
+
+
+{
+    "code": 201,
+    "message": "Created",
+    "data": [{
+        "id": 31,
+        "username": "teslagi",
+        "userdesc": "sahroni",
+        "usertype": "user",
+        "jenisuser": "1",
+        "cabang": "1"
+    }]
+}
