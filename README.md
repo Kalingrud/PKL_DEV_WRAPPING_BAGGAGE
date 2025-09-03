@@ -132,3 +132,12 @@ list to do save trx insert ke penjualan
 8.buat kode untuk coloumn uang fungsi perkalian di coloumn qty dan pack type 
 9.buat kode generate random dengan mengambil value datetime
 10.tes backend
+
+
+
+relasi parameter :
+1.Termcode relasi ke tabel location di coloumn code
+2.ShiftCode relasi ke tabel empshift di coloumn code
+3.LoginCode relasi ke tabel users di coloumn username
+4.pack_type relasi ke tabel wrap_price di coloumn pack_type
+5.payment_type relasi ke tabel cfg_payment di coloumn code
