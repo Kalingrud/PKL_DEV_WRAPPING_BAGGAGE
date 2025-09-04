@@ -148,116 +148,121 @@ class UserController { //controller yang berisi logika untuk CRUD TABLE USERS
       }
       
       // Update user
-      const result = await User.update(id, req.body);
+      const result = await User.update(id, req.body);  //menjalankan User.update() untuk mengupdate data user di database
       
-      res.json({
-        code: 200,
-        message: 'OK',
-        data: [result]
+      res.json({          //respon json
+        code: 200,        //http eror code jika sukses kirimkan 200
+        message: 'OK',   //pesan jika sukses
+        data: [result]   //hasil update dimasukan ke dalam array
       });
       
-    } catch (error) {
-      console.error('Update error:', error.message);
-      res.status(500).json({
-        code: 500,
-        message: 'Terjadi kesalahan server',
-        data: []
+    } catch (error) {    //eror handling pada saat, await User.update()
+      console.error('Update error:', error.message);  //jika ada eror, eror nya akan dikirim ke consol dengan tulisan Update error
+      res.status(500).json({   //jika eror kirimkan code http eror 500, terjadi kesalahan server
+        code: 500,   //code nya
+        message: 'Terjadi kesalahan server',        //pesan nya kesalahan server
+        data: []         //kosong karena oprasi gagal
       });
     }
   }
 
   // Login user
-  static async login(req, res) {
-    try {
-      console.log('🔥 LOGIN ENDPOINT DIAKSES');
+  static async login(req, res) {  //mendefiniskan method statis login didalam class controler
+    try {                         //mulai blok untuk menangkap eror yang terjadi
+      console.log('🔥 LOGIN ENDPOINT DIAKSES');   //mencetak log diterminal saat endpoint dipanggil
       
-      const { username, pass } = req.body;
+      const { username, pass } = req.body;  //req.body untuk ambil input yang dikirim client
       
       // Validasi input
-      if (!username || !pass) {
-        return res.status(400).json({
-          code: 400,
-          message: 'Username dan password harus diisi',
-          data: []
+      if (!username || !pass) {    //kalo username tidak di isi dan password tidak diisi masuk ke blok ini
+        return res.status(400).json({    //kembalikan respon http 400 bad request dan hentikan eksekusi fungsi (return)
+          code: 400,                //kirimin respon 400 bad request
+          message: 'Username dan password harus diisi',        //pesan eror nya dikasih liat
+          data: []                                     //string kosong karena eksekusi gagal
         });
       }
       
-      // Sanitize input
-      const sanitizedUsername = sanitizeInput(username);
-      const sanitizedPassword = sanitizeInput(pass);
+      // Sanitize input        //keamanan input dari xss
+      const sanitizedUsername = sanitizeInput(username);         //memanggil fungsi sanitizedInput untuk membersihkan username dari html berahaya
+      const sanitizedPassword = sanitizeInput(pass);             //memanggil fungsi sanitizedInput untuk membersihkan password dari html berahaya
       
       // Cek apakah username ada di database
-      const user = await User.getUserByUsername(sanitizedUsername);
+      const user = await User.getUserByUsername(sanitizedUsername);   //memanggil fungsi async User.getUsernameByUsername() untuk mengambil data user dari database
       
-      if (!user) {
-        return res.status(401).json({
-          code: 401,
-          message: 'Username tidak ditemukan',
-          data: []
+      if (!user) {             //mengecek apakah query tidak menemukan user
+        return res.status(401).json({          //jika user tidak ditemukan langsunng kasih http eror 401
+          code: 401,                            //code eror nya 401
+          message: 'Username tidak ditemukan',   //pesan eror nya username tidak ditemukan
+          data: []                                //string kosong karena oprasi tidak berhasil
         });
       }
       
-      // Verifikasi password menggunakan bcrypt
-      const bcrypt = require('bcryptjs');
-      const isPasswordValid = await bcrypt.compare(sanitizedPassword, user.pass);
+      // Verifikasi password menggunakan bcrypt 
+      const bcrypt = require('bcryptjs');          //mengimport library bcrypt.js
+      const isPasswordValid = await bcrypt.compare(sanitizedPassword, user.pass);    //membandingkan sanitizedPasword = password yang diketik user saat login
+      //user.pass = password enkripsi yang disimpan didatabase
       
-      if (!isPasswordValid) {
-        return res.status(401).json({
-          code: 401,
-          message: 'Password salah',
-          data: []
+      if (!isPasswordValid) {          //ngecek apakah password salah
+        return res.status(401).json({               //kalo salah kirimin eror 401 dan return = oprasi langsung terhenti
+          code: 401,                      //code http eror nya
+          message: 'Password salah',          //pesan nya password salah
+          data: []               //string kosong karena oprasi gagal
         });
       }
       
-      // Login berhasil - tampilkan data user (tanpa password)
-      const userData = {
-        id: user.id,
-        username: user.username,
-        userdesc: user.userdesc,
-        usertype: user.usertype,
-        jenisuser: user.jenisuser,
-        cabang: user.cabang,
-        cookie1: user.cookie1
+      // Login berhasil - tampilkan data user (tanpa password) 
+      const userData = {        //membuat objek baru bernamaa userData tujuannya agar, hanya field tertentu dari database user
+        //yang di[ilih, semacam filter bukan langsung kirim semua objek user
+        id: user.id,       //ambil id user dari database
+        username: user.username,   //ambil username user
+        userdesc: user.userdesc,   //ambil deskripsi user
+        usertype: user.usertype,   //ambil tipe user
+        jenisuser: user.jenisuser, //ambil jenis user
+        cabang: user.cabang,          //ambil cabang
+        cookie1: user.cookie1     //ambil cookie1 
       };
       
-      return res.status(200).json({
-        code: 200,
-        message: 'OK',
-        data: [userData],
-        login_time: new Date().toLocaleString('id-ID', {timeZone: 'Asia/Jakarta'})
+      return res.status(200).json({   //kasih status http 200 ok, jika berhasil
+        code: 200,    //kasih code http eror 200
+        message: 'OK',   //kasih pesan ok jika berhasil
+        data: [userData],        //array yang berisi objek Userdata
+        login_time: new Date().toLocaleString('id-ID', {timeZone: 'Asia/Jakarta'})  //tambahin login_time untuk menampilkan waktu login user
+        //format tanggal waktu dan regional
       });
       
-    } catch (error) {
-      console.error('❌ Login error:', error);
-      return res.status(500).json(errorResponse(500, 'Terjadi kesalahan server'));
+    } catch (error) {     //menangkap eror apa pun saat login diproses
+      console.error('❌ Login error:', error);   //tulis eror ke consol server, dengan prefix login eror.
+      return res.status(500).json(errorResponse(500, 'Terjadi kesalahan server'));   //mengirim respon client dengan status http 500
+      //internal server eror, 
     }
   }
 
   // Delete user
-  static async delete(req, res) {
-    try {
-      console.log('DELETE endpoint accessed');
+  static async delete(req, res) {   //mendefinisikan method statis delete didalam controler, req = objek request dari client berisi body params, res = objek response yang digunakan untuk kirim jawaban ke client
+    try {     //awal dari blok try catch. semua eror saat proses delete akan ditangani di catch
+      console.log('DELETE endpoint accessed');    //log ke console saat endpoint delete diakses client, 
       
-      const { id, username } = req.body;
+      const { id, username } = req.body;   //ambil id dan username yang dikirim client dari req.body 
       
-      // Bisa delete berdasarkan ID atau username
-      if (!id && !username) {
-        return res.status(400).json({
-          code: 400,
-          message: 'Mohon isi id atau username terlebih dahulu',
-          data: []
+      // Bisa delete berdasarkan ID atau username      
+      if (!id && !username) {                  //kondisi pengecekan id dan username di wajib di isi
+        return res.status(400).json({        //return = langsung menghentikan fungsi jika id dan username tidak di isi,
+          code: 400,                         //kasih code http eror 400
+          message: 'Mohon isi id atau username terlebih dahulu',      //pesan nya yang dikirmkan ke console
+          data: []            //string kosong karena oprasi gagal
         });
       }
       
-      let identifier = id || username;
-      let searchField = id ? 'id' : 'username';
+      let identifier = id || username;      //membuat variable identifier untuk menyimpan nilai unik yang akan dipakai menghapus user.
+      let searchField = id ? 'id' : 'username';   //membuat variable searchField untuk menentukan kolom mana yang dipakai query delet
       
       // Check if user exists
-      let existingUsers;
-      if (searchField === 'id') {
+      let existingUsers;      //mendefinisikan variable existingUsers tanpa nilai awal
+      if (searchField === 'id') {      //mengecek apakah pencarian user akan berdasarkan id
+        //searchField sebelum nya sudah di isi id atau username
         existingUsers = await User.read({ id: identifier });
       } else {
-        existingUsers = await User.read({ username: identifier });
+        existingUsers = await User.read({ username: identifier }); 
       }
       
       if (existingUsers.length === 0) {
