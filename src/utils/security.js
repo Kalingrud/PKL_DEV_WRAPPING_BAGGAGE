@@ -66,14 +66,14 @@ const validateRequiredFields = (req, res, fields) => {
     const value = req.body[field];
     if (!value || value.toString().trim() === '') {
       switch (field) {
-        case 'username': errors.push('Mohon isi username terlebih dahulu'); break;
-        case 'userdesc': errors.push('Mohon isi userdesc terlebih dahulu'); break;
-        case 'pass': errors.push('Mohon isi pass terlebih dahulu'); break;
-        case 'usertype': errors.push('Mohon isi usertype terlebih dahulu'); break;
-        case 'jenisuser': errors.push('Mohon isi jenisuser terlebih dahulu'); break;
-        case 'cabang': errors.push('Mohon isi cabang terlebih dahulu'); break;
-        case 'id': errors.push('Mohon isi id terlebih dahulu'); break;
-        default: errors.push(`Mohon isi ${field} terlebih dahulu`);
+        case 'username':            errors.push('Mohon isi username terlebih dahulu'); break;
+        case 'userdesc':            errors.push('Mohon isi userdesc terlebih dahulu'); break;
+        case 'pass':                errors.push('Mohon isi pass terlebih dahulu'); break;
+        case 'usertype':            errors.push('Mohon isi usertype terlebih dahulu'); break;
+        case 'jenisuser':           errors.push('Mohon isi jenisuser terlebih dahulu'); break;
+        case 'cabang':              errors.push('Mohon isi cabang terlebih dahulu'); break;
+        case 'id':                  errors.push('Mohon isi id terlebih dahulu'); break;
+        default:                    errors.push(`Mohon isi ${field} terlebih dahulu`);
       }
     } else {
       const securityCheck = validateSecureInput(value, field);

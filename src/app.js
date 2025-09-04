@@ -93,11 +93,11 @@ app.get('/test/log', (req, res) => {
 
 app.get('/test/unauthorized', (req, res) => {
   res.status(401).json({
-    success: false,
-    message: 'Unauthorized access - Token tidak valid atau expired',
-    error_code: 'UNAUTHORIZED_ACCESS',
-    timestamp: new Date().toLocaleString('id-ID', {timeZone: 'Asia/Jakarta'}),
-    required_auth: 'Bearer token atau API key'
+success: false,
+message: 'Unauthorized access - Token tidak valid atau expired',
+error_code: 'UNAUTHORIZED_ACCESS',
+timestamp: new Date().toLocaleString('id-ID', {timeZone: 'Asia/Jakarta'}),
+required_auth: 'Bearer token atau API key'
   });
 });
 
