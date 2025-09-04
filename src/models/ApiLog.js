@@ -1,17 +1,19 @@
-const db = require('../config/database');
+const db = require('../config/database');  //import konfigurasi database dari folder config
 
-class ApiLog {
-  // Create new log entry
-  static async create(logData) {
-    return new Promise((resolve, reject) => {
-      const insertQuery = `
+class ApiLog {  //membuat kelas apilog untuk mengelola logging API
+  
+  static async create(logData) { //sederhana nya adalah method create untuk menambahkan log baru ke table api_log
+    return new Promise((resolve, reject) => {     //membuat promise baru untuk oprasi database
+      //apa itu promise? promise adalah cara untuk menangani oprasi asinkron di javascript
+      //apa itu asinkron? asinkron adalah oprasi yang tidak langsung selesai, misalnya oprasi database.
+      const insertQuery = `   //adalah query sql untuk memasukan data log baru ke table api_log
         INSERT INTO api_log (
           incoming, from_ip, duration, url_method, url_hit, url_full,
           req_post, req_get, outgoing, app_response, geo_ip, geo_long, geo_lat, geo_city, agent_detect
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
       
-      const values = [
+      const values = [        //buat array values yang isinya data dari logData yang akan dimasukan ke database
         logData.incoming,
         logData.from_ip,
         logData.duration,
@@ -29,44 +31,66 @@ class ApiLog {
         logData.agent_detect
       ];
       
-      db.query(insertQuery, values, (err, result) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(result.insertId);
+      db.query(insertQuery, values, (err, result) => {     //menjalankan query sql ke database menggunakan db.query
+      //insertQuery = string query SQL yang tadi kita bikin (INSERT INTO api_log ...).
+      //values = array data yang akan menggantikan tanda ? di query.
+      //(err, result) => { ... } = callback yang dijalankan setelah query selesai.
+        if (err) {  // memeriksa apakah ada eror saat menjalankan query
+          reject(err);   //kalo ada eror, Promise akan dianggap gagal (rejected) dan eror nya diteruskan ke catch
+        } else {   //kalo ga ada eror, promise dianggap berhasil(solved)
+          resolve(result.insertId);  //mengembalikan id dari row yang baru dimasukan ke table api_log
         }
       });
     });
   }
 
-  // Get recent logs
-  static async getRecentLogs(limit = 10) {
-    return new Promise((resolve, reject) => {
-      const query = `
-        SELECT * FROM api_log 
-        ORDER BY id DESC 
-        LIMIT ?
+  
+  static async getRecentLogs(limit = 10) {    //method ini berfungsi untuk mengambil log terbaru dari table api_log
+  //static → method ini milik kelas, bukan instance; dipanggil dengan NamaKelas.getRecentLogs(...).
+  //async → method mengembalikan Promise dan bisa dipakai dengan await.
+  //getRecentLogs → nama method, tujuan: mengambil log terbaru.
+  //(limit = 10) → parameter limit punya nilai default 10 jika pemanggil tidak mengirim argumen. Ini menentukan berapa baris log yang diambil.
+    
+    return new Promise((resolve, reject) => {  //membuat promise baru untuk oprasi database   
+  //resolve → dipanggil kalau query berhasil, untuk mengembalikan hasilnya.
+  //reject → dipanggil kalau query gagal, untuk mengembalikan error.    
+
+      const query = `   //menyimpan perintah sql kedalam variable query
+        SELECT * FROM api_log  //mengambil semua kolom dari table api_log
+        ORDER BY id DESC       //mengurutkan hasil berdasarkan kolom id secara menurun (log terbaru diatas)
+        LIMIT ?              //membatasi jumlah hasil yang diambil sesuai nilai limit
       `;
       
-      db.query(query, [limit], (err, results) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(results);
+      db.query(query, [limit], (err, results) => {    //method untuk menjalankan sql query ke database mysql
+        if (err) {  //memeriksa apakah ada eror saat menjalankan query
+          reject(err);  //jika ada eror, promise akan dianggap gagal (rejected) dan eror nya diteruskan ke catch
+        } else {       //kalo ga ada eror, promise dianggap berhasil(solved)
+          resolve(results); //promise dianggap berhasil, hasil query dikembalikan ke pemanggil await ApiLog.
         }
       });
     });
   }
 
   // Get logs by filter
-  static async getLogsByFilter(filters = {}) {
-    return new Promise((resolve, reject) => {
-      let query = 'SELECT * FROM api_log WHERE 1=1';
-      let params = [];
+  static async getLogsByFilter(filters = {}) {   //
+    //static → method milik kelas, dipanggil langsung lewat nama class (ApiLog.getLogsByFilter(...)) tanpa buat objek dulu.
+    //async → method ini bisa dipanggil dengan await karena isinya akan mengembalikan Promise.
+    //getLogsByFilter → nama method, fungsinya: ambil log dari tabel api_log dengan kondisi filter tertentu.
+    //(filters = {}) → parameter filters berupa object, default-nya {} (kosong). Misalnya bisa berisi { username: "andi", ip: "127.0.0.1" }.
+    
+    return new Promise((resolve, reject) => {  //membuat dan mengembalikan promise baru untuk oprasi database
+      //resolve dipanggil kalau query sukses → mengembalikan hasil.
+      //reject dipanggil kalau query gagal → mengembalikan error.
+
+      let query = 'SELECT * FROM api_log WHERE 1=1';  //inisialisasi variable query dengan string  SQL standar
+      let params = [];                                //inisialisasi variable params (parameter) sebagai array kosong
       
-      if (filters.from_ip) {
-        query += ' AND from_ip LIKE ?';
-        params.push(`%${filters.from_ip}%`);
+      if (filters.from_ip) {  
+      //Mengecek apakah object filters punya properti from_ip dan nilainya tidak kosong.
+      //Artinya: hanya jika user memberi filter berdasarkan from_ip, maka kondisi tambahan akan dimasukkan ke query SQL.
+
+        query += ' AND from_ip LIKE ?';       //menambahkan kondisi ke query SQL dasar. += artinya menempelkan string baru ke query, LIKE dipakai agar pencarian lebih fleksibel
+        params.push(`%${filters.from_ip}%`);  //menambahkan nilai parameter ke array params. 
       }
       
       if (filters.url_method) {

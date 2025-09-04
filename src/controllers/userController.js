@@ -236,7 +236,7 @@ class UserController { //controller yang berisi logika untuk CRUD TABLE USERS
       //internal server eror, 
     }
   }
-
+  
   // Delete user
   static async delete(req, res) {   //mendefinisikan method statis delete didalam controler, req = objek request dari client berisi body params, res = objek response yang digunakan untuk kirim jawaban ke client
     try {     //awal dari blok try catch. semua eror saat proses delete akan ditangani di catch
@@ -260,35 +260,35 @@ class UserController { //controller yang berisi logika untuk CRUD TABLE USERS
       let existingUsers;      //mendefinisikan variable existingUsers tanpa nilai awal
       if (searchField === 'id') {      //mengecek apakah pencarian user akan berdasarkan id
         //searchField sebelum nya sudah di isi id atau username
-        existingUsers = await User.read({ id: identifier });
+        existingUsers = await User.read({ id: identifier });  //memanggil method di model user untuk membaca data user berdasarkan id
       } else {
-        existingUsers = await User.read({ username: identifier }); 
+        existingUsers = await User.read({ username: identifier });  //memanggil method dimodel user untuk membaca data user berdasarkan username
       }
       
-      if (existingUsers.length === 0) {
-        return res.status(404).json({
-          code: 404,
-          message: `User dengan ${searchField} "${identifier}" tidak ditemukan`,
-          data: []
+      if (existingUsers.length === 0) { //memeriksa apakah user dengan id atau username yang diberikan kosong (tidak ada didatabase)
+        return res.status(404).json({ //kalo kosong kirim http eror 404 
+          code: 404,  //code http eror nya
+          message: `User dengan ${searchField} "${identifier}" tidak ditemukan`,  //kasih pesan user dengan searchfield id/username "identifier" tidak ditemukan
+          data: [] //string kosong karena oprasi gagal
         });
       }
       
       // Delete user
-      const result = await User.delete(identifier);
+      const result = await User.delete(identifier);  //memanggil method delete dari model user untuk menghapus user berdasarkan id atau username
       
-      res.json({
-        code: 200,
-        message: 'OK',
-        data: [result],
-        deleted_user: existingUsers[0]
+      res.json({   //kirim response ke clien dalam format json
+        code: 200,   //code http eror nya 200 jika sukses
+        message: 'OK',   //pesan nya jika berhasil kirimkan ke user
+        data: [result],   //hasil delete dimasukan ke dalam array
+        deleted_user: existingUsers[0]  //menambahkan informasi tentang user yang dihapus, diambil dari existingUsers
       });
       
-    } catch (error) {
-      console.error('Delete error:', error.message);
-      res.status(500).json({
-        code: 500,
-        message: 'Terjadi kesalahan server',
-        data: []
+    } catch (error) {    //menangkap semua eror yang terjadi selama proses delete
+      console.error('Delete error:', error.message);  //tulis eror ke console dengan informasi delete eror
+      res.status(500).json({   //kirim response ke client dengan status http eror 500 
+        code: 500,  //code nya 500
+        message: 'Terjadi kesalahan server',   //pesan nya kesalahan server
+        data: []    //string kosong karena oprasi gagal
       });
     }
   }
