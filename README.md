@@ -31,8 +31,8 @@ Senin 1 september pagi, sudah harus selesai
 -semua field disamakan✅
 -semua tipe data disesuaikan✅
 -perbaikan default value untuk datetime dan varchar
-contoh date time : '0000-00-00 00:00:00'✅
-contoh varchar : '-'✅
+contoh date time : '0000-00-00 00:00:00'
+contoh varchar : '-'
 
 2. hit endpoint teman
 -Kalingga hit endpoint ipat✅
@@ -47,15 +47,15 @@ contoh varchar : '-'✅
 - ussername berhasil menampilkan row data username tersebut.✅
 - jika berhasil, maka sistem akan menampilkan row data username tersebut✅
 - jika gagal, maka menampilkan username tidak ditemukan.✅
-- tambahkan http eror✅
-- tambah kan respon code messege di semua respon:
+- tambahkan http eror   
+- tambah kan respon code messege:
 
 {
     "code":200
     "messege":"OK"
     "data":[
     {
-        data 
+        1:1
     }
     ]
 }
@@ -87,57 +87,9 @@ Contoh agent_detect :
     "SERVER_PROTOCOL": "HTTP/1.1",
     "REQUEST_METHOD": "POST",
     "QUERY_STRING": "",
-    "REQUEST_URI": "/wrapapk/Grab_Setup.php",
+    "REQUEST_URI": "/wrapapk/Grab_Setup.php",=
     "SCRIPT_NAME": "/wrapapk/Grab_Setup.php",
     "PHP_SELF": "/wrapapk/Grab_Setup.php",
     "REQUEST_TIME_FLOAT": 1745913079.717708,
     "REQUEST_TIME": 1745913079
 }
-
-
-masalah:
-parameter get gak ke isi di req get
-
-solusi: 
-1.cari kode yang menangani req get
-2.tambahin script untuk ngebaca parameter get
-3.tes endpoint
-4.ngecek scripnya sudah dapet parameternya atau belum
-5.buat kode untuk insert ke database
-6.cek ke database sudah insert atau belum
-
-
-{
-    "code": 201,
-    "message": "Created",
-    "data": [{
-        "id": 31,
-        "username": "teslagi",
-        "userdesc": "sahroni",
-        "usertype": "user",
-        "jenisuser": "1",
-        "cabang": "1"
-    }]
-}
-
-
-
-list to do save trx insert ke penjualan
-1.buat endpoint untuk save trx
-2.buat parameter di postman 
-3.buat route save trx
-4.buat kode untuk relasi parameter dan tabel yang wajib di relasi
-6.tes apakah sudah ter relasi
-7.buat kode untuk menginsert data data dari parameter ke tabel penjualan
-8.buat kode untuk coloumn uang fungsi perkalian di coloumn qty dan pack type 
-9.buat kode generate random dengan mengambil value datetime
-10.tes backend
-
-
-
-relasi parameter :
-1.Termcode relasi ke tabel location di coloumn code
-2.ShiftCode relasi ke tabel empshift di coloumn code
-3.LoginCode relasi ke tabel users di coloumn username
-4.pack_type relasi ke tabel wrap_price di coloumn pack_type
-5.payment_type relasi ke tabel cfg_payment di coloumn code
