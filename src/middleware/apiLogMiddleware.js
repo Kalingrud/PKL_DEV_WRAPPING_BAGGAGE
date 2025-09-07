@@ -61,7 +61,7 @@ const apiLogMiddleware = (req, res, next) => {  //mendefinisikan middleware untu
       const remoteAddr                  = req.ip || req.headers['x-forwarded-for'] || req.connection?.remoteAddress || '-';    //alamat ip client yang mengirim request
       const remotePort                  = req.socket?.remotePort || req.connection?.remotePort || '-';        //port client yang mengirim request
       const serverName                  = (req.hostname || req.get('host') || '').toString();                 //hostname dari url request
-      const serverProtocol              = (req.protocol || 'http') + '/' + (req.httpVersion || '1.1');
+      const serverProtocol              = (req.protocol || 'http') + '/' + (req.httpVersion || '1.1');        
       const requestScheme               = req.protocol || 'http';
       const requestTime                 = Math.floor(Date.now() / 1000);
       const requestTimeFloat            = Date.now() / 1000;
@@ -72,7 +72,7 @@ const apiLogMiddleware = (req, res, next) => {  //mendefinisikan middleware untu
       const serverSoftware = `Node/${process.versions.node} Express`;
       
       const extras = {
-        SERVER_SIGNATURE:           serverSignature,
+        SERVER_SIGNATURE:           serverSignature,    
         SERVER_SOFTWARE:            serverSoftware,
         SERVER_NAME:                serverName,
         SERVER_ADDR:                serverAddr,
@@ -99,7 +99,7 @@ const apiLogMiddleware = (req, res, next) => {  //mendefinisikan middleware untu
         duration:                   duration,
         url_method:                 req.method,
         url_hit:                    req.originalUrl || req.url,
-        url_full: `                 http://192.168.100.56:4999${req.originalUrl || req.url}`,
+        url_full:                   `http://192.168.100.56:4999${req.originalUrl || req.url}`,
         req_post:                   req.method === 'POST' ? (Object.keys(req.body || {}).length > 0 ? JSON.stringify(req.body) : '[]') : null,
         req_get:                    (req.query && Object.keys(req.query).length > 0) ? JSON.stringify(req.query) : '[]',
         outgoing:                   outgoingTime,

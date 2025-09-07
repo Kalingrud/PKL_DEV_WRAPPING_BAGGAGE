@@ -88,6 +88,15 @@ class UserController { //controller yang berisi logika untuk CRUD TABLE USERS
       //params berisi filter, misal username=andi, supaya cuma ambil user tertentu.
       //await = tunggu sampe data kelar diambil
       
+      // Check if any users found
+      if (users.length === 0) {  //cek apakah array users kosong (tidak ada data)
+        return res.status(404).json({  //kalo kosong kirim http eror 404
+          code: 404,  //code nya 404
+          message: 'Data tidak ditemukan',  //pesan nya data tidak ditemukan
+          data: []  //kosongin karena ga ada data
+        });
+      }
+      
       res.json({ //kirim response ke client dalam format json
         code: 200,  //kasih code http eror 200 kalo sukses
         message: 'OK',  //kasih messege simple aja bagen ora bingung
@@ -133,7 +142,7 @@ class UserController { //controller yang berisi logika untuk CRUD TABLE USERS
           data: []  //hasil ny
         });
       }
-      
+        
       // bakal cek usernam unik kalo user mau update username.
       if (req.body.username) {  //cek apa user ngirim field username dibody requst
         const usernameExists = await User.checkUsernameExists(req.body.username, id);  //panggil fungsi usernameexist untuk cek username

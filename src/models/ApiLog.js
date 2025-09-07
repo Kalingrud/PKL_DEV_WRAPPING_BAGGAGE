@@ -6,7 +6,7 @@ class ApiLog {  //membuat kelas apilog untuk mengelola logging API
     return new Promise((resolve, reject) => {     //membuat promise baru untuk oprasi database
       //apa itu promise? promise adalah cara untuk menangani oprasi asinkron di javascript
       //apa itu asinkron? asinkron adalah oprasi yang tidak langsung selesai, misalnya oprasi database.
-      const insertQuery = `   //adalah query sql untuk memasukan data log baru ke table api_log
+      const insertQuery = `
         INSERT INTO api_log (
           incoming, from_ip, duration, url_method, url_hit, url_full,
           req_post, req_get, outgoing, app_response, geo_ip, geo_long, geo_lat, geo_city, agent_detect
@@ -55,10 +55,10 @@ class ApiLog {  //membuat kelas apilog untuk mengelola logging API
   //resolve → dipanggil kalau query berhasil, untuk mengembalikan hasilnya.
   //reject → dipanggil kalau query gagal, untuk mengembalikan error.    
 
-      const query = `   //menyimpan perintah sql kedalam variable query
-        SELECT * FROM api_log  //mengambil semua kolom dari table api_log
-        ORDER BY id DESC       //mengurutkan hasil berdasarkan kolom id secara menurun (log terbaru diatas)
-        LIMIT ?              //membatasi jumlah hasil yang diambil sesuai nilai limit
+      const query = `
+        SELECT * FROM api_log
+        ORDER BY id DESC
+        LIMIT ?
       `;
       
       db.query(query, [limit], (err, results) => {    //method untuk menjalankan sql query ke database mysql
