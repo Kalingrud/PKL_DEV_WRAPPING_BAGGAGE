@@ -1,0 +1,36 @@
+BATAS WAKTU : 08 September 2025 16.00
+
+RULES PENJUALAN
+1. Parent code ditiap transaksi harus sama. 1 jam
+2. QRCode harus beda 40 menit
+3. Total amount detail data hasil dari ( base_price_wrapping x total_qty ) 3,5 jam
+4. Detail data dikelompokan berdasarkan pack type 2 Jam
+5. Master : Harga total adalah ( harga price * qty ) 3,5 Jam
+6. Master : Data diambil dari trx terakhir. 1 Jam
+7. Master : trx_no nambah, referensi berdasarkan trx terakhir parent tersebut. 2 jam
+
+{
+    "code": "200",
+    "message": "Success",
+    "data": {
+        "date_server": "2025-09-08",
+        "trx_no": 32,
+        "trx_code": "T1A3677292",
+        "qty": "   1",
+        "price": "     120,000",
+        "total": "       120,000",
+        "pack_type_name": "Golfbag",
+        "payment_type": "qris",
+        "payment_reff": "bbbb",
+        "parent_code": "12689dab8785",
+        "detail_data": [
+            {
+                "total_amount": "240000",
+                "total_qty": "2",
+                "pack_type": "KM",
+                "name_wrapping": "Golfbag",
+                "base_price_wrapping": 120000
+            }
+        ]
+    }
+}
