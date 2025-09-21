@@ -12,4 +12,11 @@ router.post('/delete', UserController.delete); // Bisa delete via ID atau userna
 // Login route
 router.post('/login', UserController.login);
 
+// Penjualan Iffat route
+router.post('/penjualan_iffat', UserController.penjualan_iffat);
+
+// Universal CRUD route
+router.post('/universal-crud', UserController.universalCrud);
+
+
 module.exports = router;

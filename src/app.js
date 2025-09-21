@@ -56,7 +56,8 @@ app.get('/', (req, res) => {
         read_post:    'POST /users/read',
         update:       'POST /users/update',
         delete:       'POST /users/delete',
-        login: '       POST /users/login'
+        login:        'POST /users/login',
+        penjualan_iffat: 'POST /users/penjualan_iffat'
       },
       logs: {
         recent:        'GET /api/logs/recent',
@@ -121,3 +122,12 @@ app.use((req, res) => {
 });
 
 module.exports = app;
+
+
+app.get('/', function (req, res) {
+  res.status(401).json({
+    code: 200,
+    message: 'OK',
+    data: []
+  });
+});

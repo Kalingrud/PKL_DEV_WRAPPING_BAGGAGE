@@ -26,4 +26,5 @@ app.listen(PORT, HOST, () => {
   console.log(`POST /users/read`);
   console.log(`POST /users/update`);
   console.log(`POST /users/delete`);
+  console.log(`POST /users/universal-crud`);
 });
