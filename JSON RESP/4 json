@@ -1,0 +1,24 @@
+{
+  "operations": [
+    {
+      "table": "cfg_payment",
+      "action": "read",
+      "data": {}
+    },
+    {
+      "table": "location",
+      "action": "read",
+      "data": {}
+    },
+    {
+      "table": "empshift",
+      "action": "read",
+      "data": {}
+    },
+    {
+      "table": "webconfig",
+      "action": "read",
+      "data": {}
+    }
+  ]
+}

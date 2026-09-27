@@ -7,7 +7,7 @@ router.get('/recent', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
     const logs = await ApiLog.getRecentLogs(limit);
-    
+
     res.json({
       code: 200,
       message: 'OK',
@@ -28,7 +28,7 @@ router.get('/filter', async (req, res) => {
   try {
     const filters = req.query;
     const logs = await ApiLog.getLogsByFilter(filters);
-    
+
     res.json({
       code: 200,
       message: 'OK',
@@ -48,7 +48,7 @@ router.get('/filter', async (req, res) => {
 router.get('/test', async (req, res) => {
   try {
     const connectionOK = await ApiLog.testConnection();
-    
+
     res.json({
       code: 200,
       message: 'OK',

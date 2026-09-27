@@ -10,13 +10,25 @@ router.post('/update', UserController.update);
 router.post('/delete', UserController.delete); // Bisa delete via ID atau username
 
 // Login route
-router.post('/login', UserController.login);
+router.post('/login', UserController.login);   // route untuk login
 
-// Penjualan Iffat route
-router.post('/penjualan_iffat', UserController.penjualan_iffat);
+//check trx
+router.post('/Check_Trx', UserController.Check_Trx)  //route untuk check transaksi
 
-// Universal CRUD route
-router.post('/universal-crud', UserController.universalCrud);
+//grabdata_payment
+router.post('/grabdata_payment', UserController.grabdata_payment)  //route untuk payment data
+
+
+//grabdata_price
+router.post('/grabdata_price', UserController.grabdata_price)  //route untuk price list
+
+// Penjualan trx
+router.post('/lingga_trx', UserController.lingga_trx);  //route untuk penjualan
+
+// Universal CRUD route 
+router.post('/lingga_crud', UserController.lingga_crud); //route untuk universal CRUD
+router.post('/Grab_Setup', UserController.Grab_Setup);
+
 
 
 module.exports = router;

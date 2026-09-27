@@ -1,0 +1,15 @@
+{
+  "action": "create",
+  "tables": {
+    "empshift": {
+      "code": "Shift 01",
+      "work_in": "08:00",
+      "work_out": "17:00"
+    },
+    "location": {
+      "code": "TERM001",
+      "name": "Terminal 1",
+      "airport": "CGK"
+    }
+  }
+}

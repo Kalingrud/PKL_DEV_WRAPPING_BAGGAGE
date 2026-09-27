@@ -1,0 +1,40 @@
+{
+  "operations": [
+    {
+      "table": "cfg_payment",
+      "action": "delete",
+      "data": {
+        "id": 1
+      }
+    },
+    {
+      "table": "location",
+      "action": "create",
+      "data": { 
+        "code": "TERM006",
+        "name": "Terminal 6",
+        "airport": "BDO"
+      }
+    },
+    {
+      "table": "empshift",
+      "action": "read",
+      "data": {}
+    },
+    {
+      "table": "engine",
+      "action": "update",
+      "data": {
+        "id": 3,
+        "location_code": "TERM006"
+      }
+    },
+    {
+      "table": "webconfig",
+      "action": "delete",
+      "data": {
+        "id": 2
+      }
+    }
+  ]
+}

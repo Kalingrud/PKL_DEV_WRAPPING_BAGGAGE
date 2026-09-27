@@ -35,3 +35,38 @@ RULES PENJUALAN
         ]
     }
 }
+
+
+
+
+validasi yang tidak boleh sama
+-cfgpayment: code dan name tidak boleh sama jika sama kasih response: metode pembayaran sudah ada
+-empshift: code shift tidak boleh sama jika sama kasih response: Shift "Shift" sudah ada, misal yang ada shift 1 maka shift 01 sudah ada
+-engine: code engine tidak boleh sama jika sama kasih response: engine "engine" sudah ada, misal yang ada engine 1 maka engine 01 sudah ada     
+-location: code dan name tidak boleh sama jika sama kasih response code atau nama terminal sudah ada
+-wrap_price: terminal_code pack_type dan name price tidak boleh sama jka ada kasih response: terminal _code pack_type dan name price sudah ada
+-web_config: code dan name tidak boleh sama jika sama kashi response:    code atau name sudah ada
+
+VALIDASI ENDPOINT CRUD TABLE DAN MULTITABLE:
+
+CRUD TABLE (Single Table):
+- Semua field wajib diisi kecuali yang nullable
+- Format data harus sesuai dengan tipe data (string, number, date, boolean)
+- Validasi foreign key jika ada relasi ke table lain
+- Response success: {"code": "200", "message": "Success", "data": {...}}
+- Response error: {"code": "400", "message": "Error message", "data": null}
+
+MULTITABLE:
+- Validasi semua table yang terkait dalam satu transaksi
+- Jika ada error di salah satu table, rollback semua perubahan
+- Validasi relasi antar table (foreign key constraints)
+- Response success: {"code": "200", "message": "Success", "data": {...}}
+- Response error: {"code": "400", "message": "Transaction failed", "data": null}
+
+VALIDASI KHUSUS PER TABLE:
+- cfg_payment: code dan name unique
+- empshift: code shift unique (case insensitive)
+- engine: code engine unique (case insensitive)  
+- location: code dan name unique
+- wrap_price: kombinasi terminal_code + pack_type + name_price unique
+- web_config: code dan name unique

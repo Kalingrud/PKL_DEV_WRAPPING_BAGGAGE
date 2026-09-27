@@ -177,11 +177,13 @@ class UserController { //controller yang berisi logika untuk CRUD TABLE USERS
       });
     }
   }
-
+//================================================= ENDPOINT LOGIN ================================================//================================================= ENDPOINT LOGIN ================================================
+//================================================= ENDPOINT LOGIN ================================================
+//================================================= ENDPOINT LOGIN ================================================
   // Login user
   static async login(req, res) {  //mendefiniskan method statis login didalam class controler
     try {                         //mulai blok untuk menangkap eror yang terjadi
-      console.log('🔥 LOGIN ENDPOINT DIAKSES');   //mencetak log diterminal saat endpoint dipanggil
+      console.log('LOGIN ENDPOINT DIAKSES');   //mencetak log diterminal saat endpoint dipanggil
       
       const { username, pass } = req.body;  //req.body untuk ambil input yang dikirim client
       
@@ -217,7 +219,7 @@ class UserController { //controller yang berisi logika untuk CRUD TABLE USERS
       if (!isPasswordValid) {          //ngecek apakah password salah
         return res.status(401).json({               //kalo salah kirimin eror 401 dan return = oprasi langsung terhenti
           code: 401,                      //code http eror nya
-          message: 'Password salah',          //pesan nya password salah
+          message: 'Username Atau Password salah',          //pesan nya password salah
           data: []               //string kosong karena oprasi gagal
         });
       }
@@ -262,7 +264,7 @@ class UserController { //controller yang berisi logika untuk CRUD TABLE USERS
       });
       
     } catch (error) {     //menangkap eror apa pun saat login diproses
-      console.error('❌ Login error:', error);   //tulis eror ke consol server, dengan prefix login eror.
+      console.error('Login error:', error);   //tulis eror ke consol server, dengan prefix login eror.
       return res.status(500).json(errorResponse(500, 'Terjadi kesalahan server'));   //mengirim respon client dengan status http 500
       //internal server eror, 
     }
@@ -326,11 +328,10 @@ class UserController { //controller yang berisi logika untuk CRUD TABLE USERS
 }
 
 module.exports = UserController;
-
-// Penjualan Iffat - Save Transaction (dengan validasi relasi)
-UserController.penjualan_iffat = async (req, res) => {
+//================================== ENDPOINT LINGGA TRX !! =========================================================================================================================================================================================================================================================================================
+UserController.lingga_trx = async (req, res) => {
   try {
-    console.log('🔥 PENJUALAN_IFFAT (Save_Trx) endpoint accessed');
+    console.log('Endpoint Penjualan kalingga Berhasil diakses'); 
 
     const requiredFields = [
       'TrxType', 'Termcode', 'ShiftCode', 'LoginCode', 'EngineCode',
@@ -357,18 +358,18 @@ UserController.penjualan_iffat = async (req, res) => {
     } = req.body;
 
     // Sanitize
-    TrxType = sanitizeInput(TrxType);
-    Termcode = sanitizeInput(Termcode);
-    ShiftCode = sanitizeInput(ShiftCode);
-    LoginCode = sanitizeInput(LoginCode);
-    EngineCode = sanitizeInput(EngineCode);
-    qty = sanitizeInput(qty);
-    QRCode = sanitizeInput(QRCode);
-    pack_type = sanitizeInput(pack_type);
-    payment_type = sanitizeInput(payment_type);
-    payment_reff = sanitizeInput(payment_reff);
-    parent_code = sanitizeInput(parent_code);
-    end_trx = sanitizeInput(end_trx);
+    TrxType =           sanitizeInput(TrxType);
+    Termcode =          sanitizeInput(Termcode);
+    ShiftCode =         sanitizeInput(ShiftCode);
+    LoginCode =         sanitizeInput(LoginCode);
+    EngineCode =        sanitizeInput(EngineCode);
+    qty =               sanitizeInput(qty);
+    QRCode =            sanitizeInput(QRCode);
+    pack_type =         sanitizeInput(pack_type);
+    payment_type =      sanitizeInput(payment_type);
+    payment_reff =      sanitizeInput(payment_reff);
+    parent_code =       sanitizeInput(parent_code);
+    end_trx =           sanitizeInput(end_trx);
 
     // Siapkan timestamp untuk response error (YYYY-MM-DD HH:mm:ss)
     const _errNow = new Date();
@@ -384,8 +385,8 @@ UserController.penjualan_iffat = async (req, res) => {
     const symbolPattern = /[@#$%&*()+=\[\]{}|\\:";'<>?,./~`!]/;
     if (symbolPattern.test(QRCode)) {
       return res.status(400).json({
-        code: "400",
-        message: `tidak boleh mengandung simbol Tgl : ${formattedErrorDateTime}`,
+        code: 400,
+        message: `tidak boleh mengandung simbol : ${formattedErrorDateTime}`,
         data: []
       });
     }
@@ -394,8 +395,8 @@ UserController.penjualan_iffat = async (req, res) => {
     const qrCodeExists = await Penjualan.checkQRCodeExists(QRCode);
     if (qrCodeExists) {
       return res.status(400).json({
-        code: "400",
-        message: `transaksi kode sudah di gunakan Tgl : ${formattedErrorDateTime}`,
+        code: 400,
+        message: `transaksi kode sudah di gunakan : ${formattedErrorDateTime}`,
         data: []
       });
     }
@@ -407,8 +408,8 @@ UserController.penjualan_iffat = async (req, res) => {
       const parentCodeExists = await Penjualan.checkParentCodeWithEndTrxY(parent_code);
       if (parentCodeExists) {
         return res.status(400).json({
-          code: "400",
-          message: `Transaksi sudah selesai Tgl : ${formattedErrorDateTime}`,
+          code: 400,
+          message: `Transaksi sudah selesai pada tanggal : ${formattedErrorDateTime}`,
           data: []
         });
       }
@@ -430,7 +431,7 @@ UserController.penjualan_iffat = async (req, res) => {
     const shiftNumMatch = (ShiftCode || '').match(/\d+/);
     const shiftInt = shiftNumMatch ? parseInt(shiftNumMatch[0], 10) : null;
     if (shiftInt === null) {
-      return res.status(400).json({ code: 400, message: 'ShiftCode tidak valid: harus mengandung angka shift', data: [] });
+      return res.status(400).json({ code: 400, message: 'ShiftCode tidak valid: Shift harus ada di shiftcode', data: [] });
     }
 
     // Helper query
@@ -443,84 +444,123 @@ UserController.penjualan_iffat = async (req, res) => {
 
     // Validasi relasi
     const locationOk = await runQuery('SELECT 1 FROM location WHERE code = ? AND flag = "open" LIMIT 1', [Termcode]);
-    if (locationOk.length === 0) return res.status(400).json({ code: 400, message: 'Termcode tidak ditemukan / tidak open', data: [] });
+    if (locationOk.length === 0) return res.status(400).json({ code: 400, message: 'Termcode tidak ditemukan', data: [] });
 
-    const shiftOk = await runQuery('SELECT 1 FROM empshift WHERE code = ? AND flag = "open" LIMIT 1', [ShiftCode]);
-    if (shiftOk.length === 0) return res.status(400).json({ code: 400, message: 'ShiftCode tidak valid / tidak open', data: [] });
+    const shiftOk = await runQuery('SELECT work_in, work_out FROM empshift WHERE code = ? AND flag = "open" ORDER BY work_in ASC', [ShiftCode]);
+    if (shiftOk.length === 0) return res.status(400).json({ code: 400, message: 'ShiftCode tidak valid', data: [] });
 
     const userOk = await runQuery('SELECT 1 FROM users WHERE username = ? LIMIT 1', [LoginCode]);
     if (userOk.length === 0) return res.status(400).json({ code: 400, message: 'data tidak ditemukan', data: [] });
 
-    const priceRows = await runQuery('SELECT price, name FROM wrap_price WHERE terminal_code = ? AND pack_type = ? AND flag = "open" LIMIT 1', [Termcode, pack_type]);
-    if (priceRows.length === 0) return res.status(400).json({ code: 400, message: `pack_type tidak tersedia untuk terminal ${Termcode}`, data: [] });
+    const priceRows = await runQuery('SELECT price, name FROM wrap_price WHERE pack_type = ? AND flag = "open" LIMIT 1', [pack_type]);
+    if (priceRows.length === 0) return res.status(400).json({ code: 400, message: `pack_type "${pack_type}" tidak tersedia atau tidak open flag`, data: [] });
     const unitPrice = parseInt(priceRows[0].price, 10) || 0;
     const packTypeName = priceRows[0].name || pack_type;
     const uangCalc = (parseInt(qty, 10) || 0) * unitPrice;
 
     const payOk = await runQuery('SELECT 1 FROM cfg_payment WHERE code = ? AND flag = "open" LIMIT 1', [payment_type]);
-    if (payOk.length === 0) return res.status(400).json({ code: 400, message: 'payment_type tidak valid / tidak open', data: [] });
+    if (payOk.length === 0) return res.status(400).json({ code: 400, message: 'payment_type tidak valid tidak tersedia atau tidak open flag', data: [] });
 
     // Data insert sesuai mapping yang diminta (kolom lain dibiarkan default)
     // Gunakan parent_code dari request body, bukan generate otomatis
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const d = String(now.getDate()).padStart(2, '0');
-    const hh = String(now.getHours()).padStart(2, '0');
-    const mm = String(now.getMinutes()).padStart(2, '0');
-    const ss = String(now.getSeconds()).padStart(2, '0');
-    const ms = String(now.getMilliseconds()).padStart(3, '0');
-    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const now                 = new Date();
+    const currentHour         = now.getHours();
+    const currentMinute       = now.getMinutes();
+    const currentTime         = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    
+    // Tentukan apakah shift crossing hari berdasarkan jam kerja
+    let shiftDate = new Date(now);
+    
+    // Check apakah shift memiliki multiple time ranges (crossing day)
+    // Untuk Shift 02: ada 20:00-23:59 dan 00:00-07:59
+    let isCrossingShift = false;
+    let isInEarlyMorningRange = false;
+    
+    // Cek apakah ada entry yang dimulai dari 00:00 (pagi hari)
+    const hasEarlyMorningEntry = shiftOk.some(shift => {
+      const workInHour = parseInt(shift.work_in.split(':')[0]);
+      return workInHour === 0;
+    });
+    
+    if (hasEarlyMorningEntry) {
+      isCrossingShift = true;
+      // Cari entry yang dimulai dari 00:00 untuk mendapatkan work_out pagi
+      const earlyMorningEntry = shiftOk.find(shift => parseInt(shift.work_in.split(':')[0]) === 0);
+      
+      // Parse work_out time untuk perbandingan yang lebih akurat
+      const workOutParts = earlyMorningEntry.work_out.split(':');
+      const earlyMorningOutHour = parseInt(workOutParts[0]);
+      const earlyMorningOutMinute = parseInt(workOutParts[1]);
+      
+      // Buat waktu saat ini dalam format yang bisa dibandingkan
+      const currentMinutes = currentHour * 60 + currentMinute;
+      const workOutMinutes = earlyMorningOutHour * 60 + earlyMorningOutMinute;
+      
+      // Jika waktu saat ini berada dalam range 00:00 - work_out pagi, maka masih shift hari sebelumnya
+      if (currentMinutes >= 0 && currentMinutes <= workOutMinutes) {
+        isInEarlyMorningRange = true;
+        shiftDate.setDate(shiftDate.getDate() - 1);
+      }
+    }
+    
+    const y                   = shiftDate.getFullYear();
+    const m                   = String(shiftDate.getMonth() + 1).padStart(2, '0');
+    const d                   = String(shiftDate.getDate()).padStart(2, '0');
+    const hh                  = String(now.getHours()).padStart(2, '0');
+    const mm                  = String(now.getMinutes()).padStart(2, '0');
+    const ss                  = String(now.getSeconds()).padStart(2, '0');
+    const ms                  = String(now.getMilliseconds()).padStart(3, '0');
+    const rand                = Math.random().toString(36).substring(2, 6).toUpperCase();
     const generatedParentCode = `PC${y}${m}${d}${hh}${mm}${ss}${ms}-${rand}`;
     
     // Gunakan parent_code dari request body untuk validasi dan penyimpanan
     const finalParentCode = parent_code || generatedParentCode;
 
     // Cari no_trans terakhir secara global (tidak berdasarkan parent_code)
-    const lastTrxRows = await runQuery('SELECT no_trans FROM penjualan ORDER BY CAST(no_trans AS UNSIGNED) DESC LIMIT 1');
-    const nextTrxNo = lastTrxRows.length > 0 ? parseInt(lastTrxRows[0].no_trans) + 1 : 1;
+    const lastTrxRows       = await runQuery('SELECT no_trans FROM penjualan ORDER BY CAST(no_trans AS UNSIGNED) DESC LIMIT 1');
+    const nextTrxNo         = lastTrxRows.length > 0 ? parseInt(lastTrxRows[0].no_trans) + 1 : 1;
 
-    // Format waktu untuk kolom tanggal
-    const formattedDateTime = `${y}-${m}-${d} ${hh}:${mm}:${ss}`;   // YYYY-MM-DD HH:mm:ss
-    const formattedDateOnly = `${y}-${m}-${d}`;                    // YYYY-MM-DD
+    // Format waktu untuk kolom tanggal - gunakan shift date untuk shift_date
+    const formattedDateTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${hh}:${mm}:${ss}`;   // YYYY-MM-DD HH:mm:ss (tanggal aktual transaksi)
+    const formattedDateOnly = `${y}-${m}-${d}`;                    // YYYY-MM-DD (tanggal shift yang sudah disesuaikan untuk crossing day)
 
     // Build req_server (server-only info like in api_log agent_detect)
-    const serverAddr  = req.socket?.localAddress || req.connection?.localAddress || '-';
-    const serverPort  = req.socket?.localPort || req.connection?.localPort || '-';
-    const serverName  = (req.hostname || req.get('host') || '').toString();
-    const serverSig   = `<address>Node/${process.versions.node} (Express) Server at ${serverName || serverAddr} Port ${serverPort}</address>`;
-    const serverSoft  = `Node/${process.versions.node} Express`;
-    const reqServerObj = {
-      SERVER_SIGNATURE: serverSig,
-      SERVER_SOFTWARE:  serverSoft,
-      SERVER_NAME:      serverName,
-      SERVER_ADDR:      serverAddr,
-      SERVER_PORT:      String(serverPort)
+    const serverAddr        = req.socket?.localAddress || req.connection?.localAddress || '-';
+    const serverPort        = req.socket?.localPort || req.connection?.localPort || '-';
+    const serverName        = (req.hostname || req.get('host') || '').toString();
+    const serverSig         = `<address>Node/${process.versions.node} (Express) Server at ${serverName || serverAddr} Port ${serverPort}</address>`;
+    const serverSoft        = `Node/${process.versions.node} Express`;
+    const reqServerObj      = {
+      SERVER_SIGNATURE:     serverSig,
+      SERVER_SOFTWARE:      serverSoft,
+      SERVER_NAME:          serverName,
+      SERVER_ADDR:          serverAddr,
+      SERVER_PORT:          String(serverPort)
     };
 
     const penjualanData = {
-      trx_type: TrxType,
+      trx_type:      TrxType,  
       location_code: Termcode,
-      shift_code: ShiftCode,
-      shift: shiftInt,
-      operator: LoginCode,
-      user_code: LoginCode,
-      engine_code: EngineCode,
-      qty: parseInt(qty),
-      trx_code: QRCode,
-      pack_type: pack_type,
-      payment_type: payment_type,
-      payment_reff: payment_reff,
-      parent_code: finalParentCode,
-      tgl: formattedDateTime,
-      upload_date: formattedDateTime,
-      shift_date: formattedDateOnly,
+      shift_code:    ShiftCode,
+      shift:         shiftInt,
+      operator:      LoginCode,
+      user_code:     LoginCode,
+      engine_code:   EngineCode,
+      qty:           parseInt(qty),
+      trx_code:      QRCode,
+      pack_type:     pack_type,
+      payment_type:  payment_type,
+      payment_reff:  payment_reff,
+      parent_code:   finalParentCode,
+      tgl:           formattedDateTime,
+      upload_date:   formattedDateTime,
+      shift_date:    formattedDateOnly,
       reprint: 1,
       uang: uangCalc,
       // req_get/req_post mengikuti format di api_log
-      req_get: (req.query && Object.keys(req.query).length > 0) ? JSON.stringify(req.query) : '{}',
-      req_post: req.method === 'POST' ? (Object.keys(req.body || {}).length > 0 ? JSON.stringify(req.body) : '{}') : '{}',
-      req_server: JSON.stringify(reqServerObj)
+      req_get:       (req.query && Object.keys(req.query).length > 0) ? JSON.stringify(req.query) : '{}',
+      req_post:      req.method === 'POST' ? (Object.keys(req.body || {}).length > 0 ? JSON.stringify(req.body) : '{}') : '{}',
+      req_server:    JSON.stringify(reqServerObj)
     };
 
     const saved = await Penjualan.create(penjualanData);
@@ -542,7 +582,7 @@ UserController.penjualan_iffat = async (req, res) => {
         wp.price as base_price_wrapping,
         (COUNT(*) * wp.price) as total_amount
       FROM penjualan p
-      JOIN wrap_price wp ON p.pack_type = wp.pack_type AND p.location_code = wp.terminal_code
+      JOIN wrap_price wp ON p.pack_type = wp.pack_type
       WHERE p.parent_code = ? AND wp.flag = 'open'
       GROUP BY p.pack_type, wp.name, wp.price
       ORDER BY p.pack_type
@@ -571,862 +611,856 @@ UserController.penjualan_iffat = async (req, res) => {
     };
 
     return res.status(200).json({ 
-      code: "200", 
+      code: 200, 
       message: "Success", 
       data: responseData 
     });
   } catch (error) {
-    console.error('❌ Penjualan Iffat error:', error.message);
+    console.error('Endpoint penjualan eror:', error.message);
     return res.status(500).json({ code: 500, message: 'Terjadi kesalahan server', data: [] });
   }
 };
 
-// Universal CRUD - CRUD ke semua tabel atau 1 tabel
-UserController.universalCrud = async (req, res) => {
+// Fungsi validasi format data (global)
+const validateDataFormat = (table, action, data) => {
   try {
-    console.log('🔥 UNIVERSAL CRUD endpoint accessed');
+    switch (table) {
+      case 'wrap_price':
+        if (data.price && (isNaN(data.price) || parseFloat(data.price) < 0)) {
+          return { valid: false, message: 'price harus berupa angka positif' };
+        }
+        break;
+      case 'engine':
+        if (data.engine_count && (isNaN(data.engine_count) || parseInt(data.engine_count) < 0)) {
+          return { valid: false, message: 'engine_count harus berupa angka positif' };
+        }
+        break;
+    }
     
-    const { table_name, operation } = req.body;
+    // Validasi umum untuk field yang harus berupa string
+    const stringFields = ['code', 'name', 'terminal_code', 'pack_type', 'location_code', 'airport', 'work_in', 'work_out', 'type', 'user_update', 'text_data', 'text_url'];
+    for (const field of stringFields) {
+      if (data[field] && typeof data[field] !== 'string') {
+        return { valid: false, message: `${field} harus berupa string` };
+      }
+    }
     
-    // Validasi parameter wajib
-    if (!table_name || !operation) {
+    // Validasi khusus untuk field numeric
+    if (data.amount && (isNaN(data.amount) || parseFloat(data.amount) < 0)) {
+      return { valid: false, message: 'amount harus berupa angka positif' };
+    }
+    
+    if (data.seq && (isNaN(data.seq) || parseInt(data.seq) < 0)) {
+      return { valid: false, message: 'seq harus berupa angka positif' };
+    }
+    
+    return { valid: true };
+  } catch (error) {
+    console.error(`Error validating data format for ${table}:`, error.message);
+    return { valid: false, message: 'Terjadi kesalahan saat validasi format data' };
+  }
+};
+
+// Fungsi validasi foreign key (global) dengan fuzzy search
+const validateForeignKey = async (table, data) => {
+  try {
+    switch (table) {
+      case 'engine':
+        if (data.location_code) {
+          const locationExists = await new Promise((resolve, reject) => {
+            db.query('SELECT id FROM location WHERE LOWER(code) LIKE LOWER(?) AND flag = "open"', [`%${data.location_code}%`], (err, result) => {
+              if (err) reject(err);
+              else resolve(result);
+            });
+          });
+          
+          if (locationExists.length === 0) {
+            return { valid: false, message: 'location_code tidak ditemukan atau tidak aktif' };
+          }
+        }
+        break;
+        
+      case 'wrap_price':
+        if (data.terminal_code) {
+          const terminalExists = await new Promise((resolve, reject) => {
+            db.query('SELECT id FROM location WHERE LOWER(code) LIKE LOWER(?) AND flag = "open"', [`%${data.terminal_code}%`], (err, result) => {
+              if (err) reject(err);
+              else resolve(result);
+            });
+          });
+          
+          if (terminalExists.length === 0) {
+            return { valid: false, message: 'terminal_code tidak ditemukan atau tidak aktif' };
+          }
+        }
+        break;
+    }
+    
+    return { valid: true };
+  } catch (error) {
+    console.error(`Error validating foreign key for ${table}:`, error.message);
+    return { valid: false, message: 'Terjadi kesalahan saat validasi foreign key' };
+  }
+};
+
+// Fungsi validasi khusus per table (global)
+const validateTableSpecificRules = async (table, action, data) => {
+  try {
+    switch (table) {
+      case 'cfg_payment':
+        if (action === 'create' || action === 'update') {
+          // Validasi code dan name tidak boleh sama
+          const existingPayment = await new Promise((resolve, reject) => {
+            const whereClause = action === 'create' 
+              ? 'WHERE (code = ? OR name = ?)'
+              : 'WHERE (code = ? OR name = ?) AND id != ?';
+            const params = action === 'create' 
+              ? [data.code, data.name]
+              : [data.code, data.name, data.id];
+            
+            db.query(`SELECT id FROM cfg_payment ${whereClause}`, params, (err, result) => {
+              if (err) reject(err);
+              else resolve(result);
+            });
+          });
+          
+          if (existingPayment.length > 0) {
+            return { valid: false, message: 'metode pembayaran sudah ada' };
+          }
+        }
+        break;
+
+      case 'empshift':
+        if (action === 'create' || action === 'update') {
+          // Validasi code shift tidak boleh sama (case insensitive)
+          const existingShift = await new Promise((resolve, reject) => {
+            const whereClause = action === 'create' 
+              ? 'WHERE LOWER(code) = LOWER(?)'
+              : 'WHERE LOWER(code) = LOWER(?) AND id != ?';
+            const params = action === 'create' 
+              ? [data.code]
+              : [data.code, data.id];
+            
+            db.query(`SELECT id FROM empshift ${whereClause}`, params, (err, result) => {
+              if (err) reject(err);
+              else resolve(result);
+            });
+          });
+          
+          if (existingShift.length > 0) {
+            return { valid: false, message: `Shift "${data.code}" sudah ada` };
+          }
+        }
+        break;
+
+      case 'engine':
+        if (action === 'create' || action === 'update') {
+          // Validasi code engine tidak boleh sama (case insensitive)
+          const existingEngine = await new Promise((resolve, reject) => {
+            const whereClause = action === 'create' 
+              ? 'WHERE LOWER(code) = LOWER(?)'
+              : 'WHERE LOWER(code) = LOWER(?) AND id != ?';
+            const params = action === 'create' 
+              ? [data.code]
+              : [data.code, data.id];
+            
+            db.query(`SELECT id FROM engine ${whereClause}`, params, (err, result) => {
+              if (err) reject(err);
+              else resolve(result);
+            });
+          });
+          
+          if (existingEngine.length > 0) {
+            return { valid: false, message: `engine "${data.code}" sudah ada` };
+          }
+        }
+        break;
+
+      case 'location':
+        if (action === 'create' || action === 'update') {
+          // Validasi code dan name tidak boleh sama
+          const existingLocation = await new Promise((resolve, reject) => {
+            const whereClause = action === 'create' 
+              ? 'WHERE (code = ? OR name = ?)'
+              : 'WHERE (code = ? OR name = ?) AND id != ?';
+            const params = action === 'create' 
+              ? [data.code, data.name]
+              : [data.code, data.name, data.id];
+            
+            db.query(`SELECT id FROM location ${whereClause}`, params, (err, result) => {
+              if (err) reject(err);
+              else resolve(result);
+            });
+          });
+          
+          if (existingLocation.length > 0) {
+            return { valid: false, message: 'code atau nama terminal sudah ada' };
+          }
+        }
+        break;
+
+      case 'wrap_price':
+        if (action === 'create' || action === 'update') {
+          // Validasi kombinasi terminal_code + pack_type + name tidak boleh sama
+          const existingWrapPrice = await new Promise((resolve, reject) => {
+            const whereClause = action === 'create' 
+              ? 'WHERE terminal_code = ? AND pack_type = ? AND name = ?'
+              : 'WHERE terminal_code = ? AND pack_type = ? AND name = ? AND id != ?';
+            const params = action === 'create' 
+              ? [data.terminal_code, data.pack_type, data.name]
+              : [data.terminal_code, data.pack_type, data.name, data.id];
+            
+            db.query(`SELECT id FROM wrap_price ${whereClause}`, params, (err, result) => {
+              if (err) reject(err);
+              else resolve(result);
+            });
+          });
+          
+          if (existingWrapPrice.length > 0) {
+            return { valid: false, message: 'terminal_code pack_type dan name price sudah ada' };
+          }
+        }
+        break;
+
+      case 'webconfig':
+        if (action === 'create' || action === 'update') {
+          // Validasi code dan name tidak boleh sama
+          const existingWebConfig = await new Promise((resolve, reject) => {
+            const whereClause = action === 'create' 
+              ? 'WHERE (code = ? OR name = ?)'
+              : 'WHERE (code = ? OR name = ?) AND id != ?';
+            const params = action === 'create' 
+              ? [data.code, data.name]
+              : [data.code, data.name, data.id];
+            
+            db.query(`SELECT id FROM webconfig ${whereClause}`, params, (err, result) => {
+              if (err) reject(err);
+              else resolve(result);
+            });
+          });
+          
+          if (existingWebConfig.length > 0) {
+            return { valid: false, message: 'code atau name sudah ada' };
+          }
+        }
+        break;
+    }
+    
+    return { valid: true };
+  } catch (error) {
+    console.error(`Error validating ${table}:`, error.message);
+    return { valid: false, message: 'Terjadi kesalahan saat validasi' };
+  }
+};
+
+// Handle operations array format untuk multi table CRUD dengan action berbeda
+UserController.handleOperationsArray = async (req, res, operations, allowedTables, mandatoryFields) => {
+  try {
+    console.log('OPERATIONS ARRAY DETECTED');
+    
+    // Validasi operations array
+    if (!Array.isArray(operations) || operations.length === 0) {
       return res.status(400).json({
-        code: "400",
-        message: "Mohon isi table_name dan operation terlebih dahulu",
+        code: 400,
+        message: "Operations harus berupa array yang tidak kosong",
         data: []
       });
     }
     
-    // Validasi operation (support multiple operations separated by comma)
-    const operations = operation.split(',').map(op => op.trim());
+    // Validasi setiap operation
     const allowedOperations = ['create', 'read', 'update', 'delete'];
-    const invalidOps = operations.filter(op => !allowedOperations.includes(op));
-    if (invalidOps.length > 0) {
+    
+    for (let i = 0; i < operations.length; i++) {
+      const operation = operations[i];
+      
+      // Validasi struktur operation
+      if (!operation.table || !operation.action || !operation.data) {
+        return res.status(400).json({
+          code: 400,
+          message: `Operation ke-${i + 1} tidak valid. Harus ada table, action, dan data`,
+          data: []
+        });
+      }
+      
+      // Validasi table
+      if (!allowedTables.includes(operation.table)) {
+          return res.status(400).json({
+          code: 400,
+          message: `Table '${operation.table}' tidak tersedia di operation ke-${i + 1}. Tabel yang tersedia: ${allowedTables.join(', ')}`,
+            data: []
+          });
+      }
+      
+      // Validasi action
+      if (!allowedOperations.includes(operation.action)) {
       return res.status(400).json({
-        code: "400",
-        message: `Invalid operation(s): ${invalidOps.join(', ')}. Allowed operations: create, read, update, delete`,
+          code: 400,
+          message: `Action '${operation.action}' tidak valid di operation ke-${i + 1}. Gunakan: ${allowedOperations.join(', ')}`,
         data: []
       });
+    }
+
+      // Validasi mandatory fields
+      const table       = operation.table;
+      const action      = operation.action;
+      const data        = operation.data;
+      
+      if (mandatoryFields[table] && mandatoryFields[table][action]) {
+        const requiredFields  = mandatoryFields[table][action];
+        const missingFields   = requiredFields.filter(field => !data.hasOwnProperty(field) || data[field] === null || data[field] === undefined || data[field] === '');
+        
+        if (missingFields.length > 0) {
+            return res.status(400).json({
+            code: 400,
+            message: `Field wajib tidak lengkap di operation ke-${i + 1} (${table} ${action}): ${missingFields.join(', ')}`,
+              data: []
+            });
+          }
+        }
+      }
+      
+    // Start transaction
+    await new Promise((resolve, reject) => {
+      db.query('START TRANSACTION', (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+    
+    const results = [];
+    let totalOperations = operations.length;
+    let successfulOperations = 0;
+    let failedOperations = 0;
+    
+    try {
+      // Process each operation
+      for (let i = 0; i < operations.length; i++) {
+        const operation = operations[i];
+        const { table, action, data } = operation;
+        
+        console.log(`Processing operation ${i + 1}/${operations.length}: ${table} ${action}`);
+        
+        // Validasi format data untuk operations array
+        const formatValidation = validateDataFormat(table, action, data);
+        if (!formatValidation.valid) {
+          // Rollback transaction
+          await new Promise((resolve, reject) => {
+            db.query('ROLLBACK', (err) => {
+              if (err) reject(err);
+              else resolve();
+            });
+          });
+          
+          return res.status(400).json({
+            code: 400,
+            message: `Operation ke-${i + 1} gagal: ${formatValidation.message}`,
+            data: []
+          });
+        }
+
+        // Validasi foreign key untuk operations array
+        const fkValidation = await validateForeignKey(table, data);
+        if (!fkValidation.valid) {
+          // Rollback transaction
+          await new Promise((resolve, reject) => {
+            db.query('ROLLBACK', (err) => {
+              if (err) reject(err);
+              else resolve();
+            });
+          });
+          
+          return res.status(400).json({
+            code: 400,
+            message: `Operation ke-${i + 1} gagal: ${fkValidation.message}`,
+            data: []
+          });
+        }
+
+        // Validasi khusus per table untuk operations array
+        if (action === 'create' || action === 'update') {
+          const validationResult = await validateTableSpecificRules(table, action, data);
+          if (!validationResult.valid) {
+            // Rollback transaction
+            await new Promise((resolve, reject) => {
+              db.query('ROLLBACK', (err) => {
+                if (err) reject(err);
+                else resolve();
+              });
+            });
+            
+            return res.status(400).json({
+              code: 400,
+              message: `Operation ke-${i + 1} gagal: ${validationResult.message}`,
+              data: []
+            });
+          }
+        }
+        
+        let query, params;
+        
+        switch (action) {
+          case 'create':
+            const createFields = Object.keys(data);
+            const createValues = createFields.map(field => data[field]);
+            
+            // Add flag if table has flag column (skip for engine table)
+            if (!createFields.includes('flag') && table !== 'engine') {
+              createFields.push('flag');
+              createValues.push('open');
+            }
+            
+            query = `INSERT INTO ${table} (${createFields.join(', ')}) VALUES (${createFields.map(() => '?').join(', ')})`;
+            params = createValues;
+            break;
+            
+          case 'read':
+            const whereFields = Object.keys(data);
+            
+            if (whereFields.length > 0) {
+              // Implementasi fuzzy search untuk semua field
+              const fuzzyConditions = whereFields.map(field => {
+                // Untuk field ID, gunakan exact match
+                if (field === 'id') {
+                  return `${field} = ?`;
+                }
+                // Untuk field lainnya, gunakan LIKE dengan case-insensitive
+                return `LOWER(${field}) LIKE LOWER(?)`;
+              });
+              const whereValues = whereFields.map(field => {
+                // Untuk field ID, gunakan nilai asli
+                if (field === 'id') {
+                  return data[field];
+                }
+                // Untuk field lainnya, tambahkan wildcard
+                return `%${data[field]}%`;
+              });
+              query = `SELECT * FROM ${table} WHERE ${fuzzyConditions.join(' AND ')}`;
+              params = whereValues;
+            } else {
+              query = `SELECT * FROM ${table}`;
+              params = [];
+            }
+            break;
+            
+          case 'update':
+            const updateFields = Object.keys(data).filter(key => key !== 'id');
+            const updateValues = updateFields.map(field => data[field]);
+            
+            query = `UPDATE ${table} SET ${updateFields.map(field => `${field} = ?`).join(', ')} WHERE id = ?`;
+            params = [...updateValues, data.id];
+            break;
+            
+          case 'delete':
+            query = `DELETE FROM ${table} WHERE id = ?`;
+            params = [data.id];
+            break;
+        }
+        
+        // Execute query
+        console.log(`Executing query for ${table} ${action}:`, query);
+        console.log(`Query params:`, params);
+        
+        const queryResult = await new Promise((resolve, reject) => {
+          db.query(query, params, (err, result) => {
+            if (err) {
+              console.error(`Database error for ${table} ${action}:`, err.message);
+              reject(err);
+            } else {
+              resolve(result);
+            }
+        });
+      });
+
+        // Format result
+        const result = {
+          operation_index: i,
+          table: table,
+          action: action,
+          status: 'success',
+          affected_rows: queryResult.affectedRows || 0
+        };
+        
+        if (action === 'create' && queryResult.insertId) {
+          result.insert_id = queryResult.insertId;
+        }
+        
+        if (action === 'read') {
+          result.record_count = queryResult.length;
+          result.data = queryResult;
+        }
+        
+        results.push(result);
+        successfulOperations++;
+      }
+      
+      // Commit transaction
+      await new Promise((resolve, reject) => {
+        db.query('COMMIT', (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+      
+      // Format response
+      const response = {
+        code: 200,
+        message: "Semua operation berhasil",
+        data: {
+          total_operations: totalOperations,
+          successful_operations: successfulOperations,
+          failed_operations: failedOperations,
+          operations: results
+        }
+      };
+      
+      return res.status(200).json(response);
+      
+    } catch (error) {
+      // Rollback transaction
+      await new Promise((resolve, reject) => {
+        db.query('ROLLBACK', (err) => {
+          if (err) reject(err);
+          else resolve();
+            });
+          });
+          
+      console.error('Operations array error:', error.message);
+      return res.status(500).json({
+        code: 500,
+        message: `Error di database: ${error.message}`,
+                data: []
+              });
+    }
+    
+  } catch (error) {
+    console.error('Handle operations array error:', error.message);
+    return res.status(500).json({
+      code: 500,
+      message: 'Terjadi kesalahan server',
+                data: []
+              });
+            }
+};
+
+// ============================================== ENDPOINT LINGGA CRUD ===================================================================================================================================================================================================//
+UserController.lingga_crud = async (req, res) => {
+  try {
+    console.log('LINGGA_CRUD ENDPOINT DIAKSES');
+    
+    const table_name = req.body.table_name;
+    const action = req.body.action;
+    const tables = req.body.tables;
+    const operations = req.body.operations;
+    
+    // Validasi parameter wajib
+    if (!action && !operations) {
+      return res.status(400).json({
+        code: 400,
+        message: "Mohon isi action atau operations terlebih dahulu",
+        data: []
+      });
+    }
+              
+    // Untuk multi table operation, tidak perlu table_name
+    if (!table_name && !tables && !operations) {
+              return res.status(400).json({
+        code: 400,
+        message: "Mohon sertakan table_name, tables object, atau operations array",
+                data: []
+              });
+    }
+    
+    // Validasi operation untuk format lama
+    const allowedOperations = ['create', 'read', 'update', 'delete'];
+    if (action && !allowedOperations.includes(action)) {
+              return res.status(400).json({
+        code: 400,
+        message: `Action tidak valid: ${action}. Gunakan: ${allowedOperations.join(', ')}`,
+                data: []
+              });
     }
     
     // Daftar tabel yang diizinkan
     const allowedTables = ['cfg_payment', 'empshift', 'engine', 'location', 'webconfig', 'wrap_price'];
     
+    // Define mandatory fields untuk setiap table dan action
+    const mandatoryFields = {
+      location: {
+        create: ['code', 'name', 'airport'],
+        update: ['id'],
+        read: [],
+        delete: ['id']
+      },
+      engine: {
+        create: ['code', 'location_code'],
+        update: ['id'],
+        read: [],
+        delete: ['id']
+      },
+      wrap_price: {
+        create: ['terminal_code', 'pack_type', 'name', 'price'],
+        update: ['id'],
+        read: [],
+        delete: ['id']
+      },
+      cfg_payment: {
+        create: ['code', 'name'],
+        update: ['id'],
+        read: [],
+        delete: ['id']
+      },
+      empshift: {
+        create: ['code', 'work_in', 'work_out'],
+        update: ['id'],
+        read: [],
+        delete: ['id']
+      },
+      webconfig: {
+        create: ['code', 'name', 'type', 'user_update'],
+        update: ['id'],
+        read: [],
+        delete: ['id']
+      }
+    };
+    
+    // Handle operations array format (new multi table CRUD)
+    if (operations && Array.isArray(operations)) {
+      return await UserController.handleOperationsArray(req, res, operations, allowedTables, mandatoryFields);
+    }
+    
     // Tentukan tabel yang akan diproses
     let tablesToProcess = [];
-    if (table_name === 'all') {
-      tablesToProcess = allowedTables;
-    } else {
-      if (!allowedTables.includes(table_name)) {
-        return res.status(400).json({
-          code: "400",
-          message: `Table not allowed. Allowed tables: ${allowedTables.join(', ')}`,
-          data: []
-        });
-      }
-      tablesToProcess = [table_name];
-    }
+    let multiTableData = {};
     
-    // Sanitize input
-    for (const [key, value] of Object.entries(req.body || {})) {
-      if (value && typeof value === 'string') {
-        const sanitizedValue = sanitizeInput(value);
-        if (sanitizedValue !== value) {
+    // Multi table operation
+    if (tables && typeof tables === 'object') {
+      const multiTables = Object.keys(tables);
+      const invalidMultiTables = multiTables.filter(table => !allowedTables.includes(table));
+      if (invalidMultiTables.length > 0) {
           return res.status(400).json({
-            code: 400,
-            message: `${key} tidak boleh mengandung karakter berbahaya`,
+          code: 400,
+          message: `Table tidak tersedia: ${invalidMultiTables.join(', ')}. Tabel yang tersedia: ${allowedTables.join(', ')}`,
             data: []
           });
-        }
       }
-    }
-
-    // Validate: no empty values for provided parameters (checked params with empty value)
-    const emptyParams = Object.entries(req.body || {})
-      .filter(([k, v]) => k !== 'table_name' && k !== 'operation')
-      .filter(([, v]) => v === undefined || v === null || (typeof v === 'string' && v.trim() === ''))
-      .map(([k]) => k);
-
-    if (emptyParams.length > 0) {
-      return res.status(400).json({
+      
+      tablesToProcess = multiTables;
+      multiTableData = tables;
+      
+    } else if (table_name === 'all') {
+      tablesToProcess = allowedTables;
+    } else if (table_name && allowedTables.includes(table_name)) {
+      tablesToProcess = [table_name];
+    } else if (table_name) {
+          return res.status(400).json({
         code: 400,
-        message: `Parameter berikut tidak boleh kosong: ${emptyParams.join(', ')}`,
-        data: []
-      });
+        message: `Table tidak tersedia: ${table_name}. Tabel yang tersedia: ${allowedTables.join(', ')}`,
+            data: []
+          });
+    } else {
+          return res.status(400).json({
+        code: 400,
+        message: "Mohon sertakan table_name atau tables object",
+            data: []
+          });
     }
-
-    // Duplicate validation for CREATE operation (early rejection) - separated per table
-    if (operations.includes('create')) {
-      const run = (sql, params) => new Promise((resolve, reject) => {
-        db.query(sql, params, (err, rows) => {
-          if (err) return reject(err);
-          resolve(rows || []);
+    
+    // Begin transaction for multi table operations
+    if (multiTableData && Object.keys(multiTableData).length > 0) {
+      await new Promise((resolve, reject) => {
+        db.query('START TRANSACTION', (err) => {
+          if (err) reject(err);
+          else resolve();
         });
       });
-      
-      // location: check code uniqueness
-      if (table_name === 'location' || table_name === 'all') {
-        if (req.body.location_code) {
-          const locationCodeExists = await run('SELECT 1 FROM location WHERE code = ? LIMIT 1', [req.body.location_code]);
-          if (locationCodeExists.length > 0) {
-            return res.status(400).json({
-              code: '400',
-              message: 'code bandara sudah digunakan',
-              data: []
-            });
-          }
-        }
-      }
-      
-      // location: check name uniqueness
-      if (table_name === 'location' || table_name === 'all') {
-        if (req.body.location_name) {
-          const locationNameExists = await run('SELECT 1 FROM location WHERE name = ? LIMIT 1', [req.body.location_name]);
-          if (locationNameExists.length > 0) {
-            return res.status(400).json({
-              code: '400',
-              message: 'nama lokasi sudah digunakan',
-              data: []
-            });
-          }
-        }
-      }
-      
-      
-      // cfg_payment: check code uniqueness (case-insensitive, trimmed)
-      if (table_name === 'cfg_payment' || table_name === 'all') {
-        if (req.body.cfg_payment_code) {
-          const val = String(req.body.cfg_payment_code).trim();
-          const cfgPaymentCodeExists = await run('SELECT 1 FROM cfg_payment WHERE LOWER(TRIM(code)) = LOWER(TRIM(?)) LIMIT 1', [val]);
-          if (cfgPaymentCodeExists.length > 0) {
-            return res.status(400).json({
-              code: '400',
-              message: 'kode pembayaran sudah digunakan',
-              data: []
-            });
-          }
-        }
-      }
-      
-      // cfg_payment: check name uniqueness
-      if (table_name === 'cfg_payment' || table_name === 'all') {
-        if (req.body.cfg_payment_name) {
-          const cfgPaymentNameExists = await run('SELECT 1 FROM cfg_payment WHERE name = ? LIMIT 1', [req.body.cfg_payment_name]);
-          if (cfgPaymentNameExists.length > 0) {
-            return res.status(400).json({
-              code: '400',
-              message: 'nama pembayaran sudah digunakan',
-              data: []
-            });
-          }
-        }
-      }
-      
-      // empshift: validate work_in tidak bentrok dan harus terusan dari shift dengan work_out terbesar
-      if (table_name === 'empshift' || table_name === 'all') {
-        if (req.body.empshift_work_in) {
-          const normalize = (raw) => {
-            const v = String(raw || '').trim();
-            if (/^\d{6}$/.test(v)) {
-              return `${v.slice(0,2)}:${v.slice(2,4)}:${v.slice(4,6)}`;
-            }
-            if (/^\d{2}:\d{2}:\d{2}$/.test(v)) return v;
-            return v;
-          };
-          const toSec = (t) => {
-            const [hh, mm, ss] = (t || '00:00:00').split(':').map(n => parseInt(n, 10) || 0);
-            return (hh * 3600) + (mm * 60) + ss;
-          };
-          
-          const provided = normalize(req.body.empshift_work_in);
-          const providedSec = toSec(provided);
-          
-          // 1. Cek bentrok dengan semua shift yang sudah ada
-          const existingShifts = await run('SELECT code, TIME_FORMAT(work_in, "%H:%i:%s") AS work_in, TIME_FORMAT(work_out, "%H:%i:%s") AS work_out FROM empshift', []);
-          
-          for (const shift of existingShifts) {
-            const workInSec = toSec(shift.work_in);
-            const workOutSec = toSec(shift.work_out);
-            
-            // Cek apakah work_in baru berada dalam rentang shift yang sudah ada
-            if (providedSec >= workInSec && providedSec <= workOutSec) {
-              return res.status(400).json({
-                code: '400',
-                message: `jadwal tersebut sudah tersedia pada ${shift.code}`,
-                data: []
-              });
-            }
-          }
-          
-          // 2. Cek apakah work_in harus terusan dari work_out shift dengan waktu terbesar
-          const latestShift = await run('SELECT code, TIME_FORMAT(work_out, "%H:%i:%s") AS work_out FROM empshift ORDER BY work_out DESC LIMIT 1', []);
-          if (latestShift.length > 0) {
-            const latestWorkOutSec = toSec(latestShift[0].work_out);
-            if (providedSec <= latestWorkOutSec) {
-              return res.status(400).json({
-                code: '400',
-                message: 'waktu masuk harus setelah waktu keluar shift terakhir',
-                data: []
-              });
-            }
-          }
-        }
-      }
+    }
 
-      // engine: duplicates allowed for engine_code (no uniqueness check)
-      
-      // wrap_price: check pack_type uniqueness (case-insensitive, trimmed, scoped by terminal_code if provided)
-      if (table_name === 'wrap_price' || table_name === 'all') {
-        // Validasi: jika wrap_price_pack_type diisi, maka wrap_price_price wajib diisi
-        if (req.body.wrap_price_pack_type) {
-          if (!req.body.wrap_price_price || req.body.wrap_price_price === '') {
-            return res.status(400).json({
-              code: '400',
-              message: 'harga pack belum di isi',
-              data: []
-            });
-          }
+    const results = [];
+    let totalAffectedRows = 0;
+    
+    try {
+      // Process each table
+      for (const table of tablesToProcess) {
+        console.log(`Processing table: ${table}`);
+        
+        let tableData, whereData;
+        
+        // Get data for this table
+        if (multiTableData && multiTableData[table]) {
+          // Multi table operation
+          tableData = multiTableData[table];
+          whereData = multiTableData[table];
+        } else {
+          // Single table operation
+          tableData = req.body;
+          whereData = req.body;
         }
         
-        if (req.body.wrap_price_pack_type) {
-          const val = String(req.body.wrap_price_pack_type).trim();
-          const terminal = req.body.wrap_price_terminal_code || req.body.terminal_code || null;
-          
-          let sql = 'SELECT 1 FROM wrap_price WHERE LOWER(TRIM(pack_type)) = LOWER(TRIM(?))';
-          const params = [val];
-          if (terminal) { 
-            sql += ' AND terminal_code = ?'; 
-            params.push(terminal); 
-          }
-          sql += ' LIMIT 1';
-          
-          const wrapPricePackTypeExists = await run(sql, params);
-          if (wrapPricePackTypeExists.length > 0) {
+        // Validasi format data
+        const formatValidation = validateDataFormat(table, action, tableData);
+        if (!formatValidation.valid) {
+          return res.status(400).json({
+            code: 400,
+            message: formatValidation.message,
+            data: []
+          });
+        }
+
+        // Validasi foreign key
+        const fkValidation = await validateForeignKey(table, tableData);
+        if (!fkValidation.valid) {
+          return res.status(400).json({
+            code: 400,
+            message: fkValidation.message,
+            data: []
+          });
+        }
+
+        // Validasi khusus per table sebelum eksekusi query
+        if (action === 'create' || action === 'update') {
+          const validationResult = await validateTableSpecificRules(table, action, tableData);
+          if (!validationResult.valid) {
             return res.status(400).json({
-              code: '400',
-              message: 'pack type sudah digunakan',
+              code: 400,
+              message: validationResult.message,
               data: []
             });
           }
         }
-      }
-      
-      // wrap_price: check name uniqueness (scoped by terminal_code if provided)
-      if (table_name === 'wrap_price' || table_name === 'all') {
-        if (req.body.wrap_price_name) {
-          const terminal = req.body.wrap_price_terminal_code || req.body.terminal_code || null;
-          
-          let sql = 'SELECT 1 FROM wrap_price WHERE name = ?';
-          const params = [req.body.wrap_price_name];
-          if (terminal) { 
-            sql += ' AND terminal_code = ?'; 
-            params.push(terminal); 
-          }
-          sql += ' LIMIT 1';
-          
-          const wrapPriceNameExists = await run(sql, params);
-          if (wrapPriceNameExists.length > 0) {
-            return res.status(400).json({
-              code: '400',
-              message: 'nama wrap price sudah digunakan',
-              data: []
-            });
-          }
-        }
-      }
-    }
 
-    // Duplicate validation untuk UPDATE - separated per table
-    if (operations.includes('update')) {
-      const run = (sql, params) => new Promise((resolve, reject) => {
-        db.query(sql, params, (err, rows) => {
-          if (err) return reject(err);
-          resolve(rows || []);
-        });
-      });
-
-      // cfg_payment: check code uniqueness (case-insensitive, trimmed), exclude self
-      if (table_name === 'cfg_payment' || table_name === 'all') {
-        const idUpdate = req.body.id || req.body.cfg_payment_id;
-        if (!idUpdate) {
-          // validasi update sudah memastikan wajib ada id, jadi ini hanya guard
-        } else {
-          if (req.body.cfg_payment_code) {
-            const val = String(req.body.cfg_payment_code).trim();
-            const cfgPaymentCodeExists = await run('SELECT 1 FROM cfg_payment WHERE LOWER(TRIM(code)) = LOWER(TRIM(?)) AND id <> ? LIMIT 1', [val, idUpdate]);
-            if (cfgPaymentCodeExists.length > 0) {
-              return res.status(400).json({
-                code: '400',
-                message: 'kode pembayaran sudah digunakan',
-                data: []
-              });
-            }
-          }
-        }
-      }
-
-      // cfg_payment: check name uniqueness, exclude self
-      if (table_name === 'cfg_payment' || table_name === 'all') {
-        const idUpdate = req.body.id || req.body.cfg_payment_id;
-        if (!idUpdate) {
-          // validasi update sudah memastikan wajib ada id, jadi ini hanya guard
-        } else {
-          if (req.body.cfg_payment_name) {
-            const cfgPaymentNameExists = await run('SELECT 1 FROM cfg_payment WHERE name = ? AND id <> ? LIMIT 1', [req.body.cfg_payment_name, idUpdate]);
-            if (cfgPaymentNameExists.length > 0) {
-              return res.status(400).json({
-                code: '400',
-                message: 'nama pembayaran sudah digunakan',
-                data: []
-              });
-            }
-          }
-        }
-      }
-
-      // empshift: validate work_in tidak bentrok dan harus terusan dari shift dengan work_out terbesar, exclude self
-      if (table_name === 'empshift' || table_name === 'all') {
-        const idUpdate = req.body.id || req.body.empshift_id;
-        if (req.body.empshift_work_in && idUpdate) {
-          const normalize = (raw) => {
-            const v = String(raw || '').trim();
-            if (/^\d{6}$/.test(v)) {
-              return `${v.slice(0,2)}:${v.slice(2,4)}:${v.slice(4,6)}`;
-            }
-            if (/^\d{2}:\d{2}:\d{2}$/.test(v)) return v;
-            return v;
-          };
-          const toSec = (t) => {
-            const [hh, mm, ss] = (t || '00:00:00').split(':').map(n => parseInt(n, 10) || 0);
-            return (hh * 3600) + (mm * 60) + ss;
-          };
-          
-          const provided = normalize(req.body.empshift_work_in);
-          const providedSec = toSec(provided);
-          
-          // 1. Cek bentrok dengan semua shift yang sudah ada (kecuali yang sedang diupdate)
-          const existingShifts = await new Promise((resolve, reject) => {
-            db.query('SELECT code, TIME_FORMAT(work_in, "%H:%i:%s") AS work_in, TIME_FORMAT(work_out, "%H:%i:%s") AS work_out FROM empshift WHERE id <> ?', [idUpdate], (err, rows) => {
-              if (err) return reject(err);
-              resolve(rows || []);
-            });
-          });
-          
-          for (const shift of existingShifts) {
-            const workInSec = toSec(shift.work_in);
-            const workOutSec = toSec(shift.work_out);
+        // Build and execute query based on action
+        let query, params;
+        
+        switch (action) {
+          case 'create':
+            const createFields = Object.keys(tableData).filter(key => key !== 'table_name' && key !== 'action' && key !== 'tables');
+            const createValues = createFields.map(field => tableData[field]);
             
-            // Cek apakah work_in baru berada dalam rentang shift yang sudah ada
-            if (providedSec >= workInSec && providedSec <= workOutSec) {
-              return res.status(400).json({
-                code: '400',
-                message: `jadwal tersebut sudah tersedia pada ${shift.code}`,
-                data: []
-              });
+            // Add flag if table has flag column (skip for engine table)
+            if (!createFields.includes('flag') && table !== 'engine') {
+              createFields.push('flag');
+              createValues.push('open');
             }
-          }
-          
-          // 2. Cek apakah work_in harus terusan dari work_out shift dengan waktu terbesar (kecuali yang sedang diupdate)
-          const latestShift = await new Promise((resolve, reject) => {
-            db.query('SELECT code, TIME_FORMAT(work_out, "%H:%i:%s") AS work_out FROM empshift WHERE id <> ? ORDER BY work_out DESC LIMIT 1', [idUpdate], (err, rows) => {
-              if (err) return reject(err);
-              resolve(rows || []);
-            });
-          });
-          if (latestShift.length > 0) {
-            const latestWorkOutSec = toSec(latestShift[0].work_out);
-            if (providedSec <= latestWorkOutSec) {
-              return res.status(400).json({
-                code: '400',
-                message: 'waktu masuk harus setelah waktu keluar shift terakhir',
-                data: []
-              });
-            }
-          }
-        }
-      }
-
-      // location: check code uniqueness, exclude self
-      if (table_name === 'location' || table_name === 'all') {
-        const idUpdate = req.body.id || req.body.location_id;
-        if (!idUpdate) {
-          // validasi update sudah memastikan wajib ada id, jadi ini hanya guard
-        } else {
-          if (req.body.location_code) {
-            const locationCodeExists = await run('SELECT 1 FROM location WHERE code = ? AND id <> ? LIMIT 1', [req.body.location_code, idUpdate]);
-            if (locationCodeExists.length > 0) {
-              return res.status(400).json({
-                code: '400',
-                message: 'location_code sudah digunakan',
-                data: []
-              });
-            }
-          }
-        }
-      }
-
-      // location: check name uniqueness, exclude self
-      if (table_name === 'location' || table_name === 'all') {
-        const idUpdate = req.body.id || req.body.location_id;
-        if (!idUpdate) {
-          // validasi update sudah memastikan wajib ada id, jadi ini hanya guard
-        } else {
-          if (req.body.location_name) {
-            const locationNameExists = await run('SELECT 1 FROM location WHERE name = ? AND id <> ? LIMIT 1', [req.body.location_name, idUpdate]);
-            if (locationNameExists.length > 0) {
-              return res.status(400).json({
-                code: '400',
-                message: 'location_name sudah digunakan',
-                data: []
-              });
-            }
-          }
-        }
-      }
-
-
-      // wrap_price: check pack_type uniqueness (case-insensitive, trimmed, scoped by terminal_code if provided), exclude self
-      if (table_name === 'wrap_price' || table_name === 'all') {
-        const idUpdate = req.body.id || req.body.wrap_price_id;
-        if (!idUpdate) {
-          // validasi update sudah memastikan wajib ada id, jadi ini hanya guard
-        } else {
-          if (req.body.wrap_price_pack_type) {
-            const val = String(req.body.wrap_price_pack_type).trim();
-            const terminal = req.body.wrap_price_terminal_code || req.body.terminal_code || null;
             
-            let sql = 'SELECT 1 FROM wrap_price WHERE LOWER(TRIM(pack_type)) = LOWER(TRIM(?)) AND id <> ?';
-            const params = [val, idUpdate];
-            if (terminal) { 
-              sql += ' AND terminal_code = ?'; 
-              params.push(terminal); 
-            }
-            sql += ' LIMIT 1';
-            
-            const wrapPricePackTypeExists = await run(sql, params);
-            if (wrapPricePackTypeExists.length > 0) {
-              return res.status(400).json({
-                code: '400',
-                message: 'pack type sudah digunakan',
-                data: []
-              });
-            }
-          }
-        }
-      }
-
-      // wrap_price: check name uniqueness (scoped by terminal_code if provided), exclude self
-      if (table_name === 'wrap_price' || table_name === 'all') {
-        const idUpdate = req.body.id || req.body.wrap_price_id;
-        if (!idUpdate) {
-          // validasi update sudah memastikan wajib ada id, jadi ini hanya guard
-        } else {
-          if (req.body.wrap_price_name) {
-            const terminal = req.body.wrap_price_terminal_code || req.body.terminal_code || null;
-            
-            let sql = 'SELECT 1 FROM wrap_price WHERE name = ? AND id <> ?';
-            const params = [req.body.wrap_price_name, idUpdate];
-            if (terminal) { 
-              sql += ' AND terminal_code = ?'; 
-              params.push(terminal); 
-            }
-            sql += ' LIMIT 1';
-            
-            const wrapPriceNameExists = await run(sql, params);
-            if (wrapPriceNameExists.length > 0) {
-              return res.status(400).json({
-                code: '400',
-                message: 'nama wrap price sudah digunakan',
-                data: []
-              });
-            }
-          }
-        }
-      }
-    }
-
-    // Additional validation for single-table operations
-    if (table_name !== 'all') {
-      const tableSchemas = {
-        cfg_payment: ['id', 'code', 'name', 'flag'],
-        empshift: ['id', 'code', 'work_in', 'work_out', 'flag'],
-        engine: ['id', 'code', 'location_code', 'engine_count'],
-        location: ['id', 'code', 'name', 'airport', 'store_id', 'flag'],
-        webconfig: ['id', 'code', 'name', 'type', 'text_data', 'text_url', 'amount', 'seq', 'date_update', 'user_update', 'flag'],
-        wrap_price: ['id', 'terminal_code', 'pack_type', 'name', 'price', 'flag']
-      };
-
-      const schema = tableSchemas[table_name];
-      const prefixed = (field) => `${table_name}_${field}`;
-
-      // Ensure required data presence based on operation
-      if (operation === 'create') {
-        const hasDataField = Object.keys(req.body).some(k => schema.includes(k) || schema.includes(k.replace(`${table_name}_`, '')));
-        if (!hasDataField) {
-          return res.status(400).json({
-            code: 400,
-            message: `Tidak ada data yang dikirim untuk operasi create pada tabel ${table_name}`,
-            data: []
-          });
-        }
-      }
-
-      if (operation === 'update') {
-        const hasWhere = ('id' in req.body) || (prefixed('id') in req.body);
-        const hasData = Object.keys(req.body).some(k => {
-          const unpref = k.replace(`${table_name}_`, '');
-          return schema.includes(unpref) && unpref !== 'id';
-        });
-        if (!hasWhere) {
-          return res.status(400).json({
-            code: 400,
-            message: `Mohon isi parameter id (WHERE) untuk operasi update pada tabel ${table_name}`,
-            data: []
-          });
-        }
-        if (!hasData) {
-          return res.status(400).json({
-            code: 400,
-            message: `Mohon isi minimal satu field data untuk operasi update pada tabel ${table_name}`,
-            data: []
-          });
-        }
-      }
-
-      if (operation === 'delete' || operation === 'read') {
-        const hasWhere = Object.keys(req.body).some(k => {
-          if (k === 'operation' || k === 'table_name') return false;
-          const unpref = k.replace(`${table_name}_`, '');
-          return schema.includes(unpref);
-        });
-        // For READ single-table: allow no filter to fetch all rows
-        if (operation === 'delete' && !hasWhere) {
-          return res.status(400).json({
-            code: 400,
-            message: `Mohon isi minimal satu parameter filter (WHERE) untuk operasi ${operation} pada tabel ${table_name}`,
-            data: []
-          });
-        }
-      }
-    }
-    
-    // Helper function untuk build query
-    const buildQuery = (table, operation, data, where, valueSearch) => {
-      const tableSchemas = {
-        cfg_payment: ['id', 'code', 'name', 'flag'],
-        empshift: ['id', 'code', 'work_in', 'work_out', 'flag'],
-        engine: ['id', 'code', 'location_code', 'engine_count'],
-        location: ['id', 'code', 'name', 'airport', 'store_id', 'flag'],
-        webconfig: ['id', 'code', 'name', 'type', 'text_data', 'text_url', 'amount', 'seq', 'date_update', 'user_update', 'flag'],
-        wrap_price: ['id', 'terminal_code', 'pack_type', 'name', 'price', 'flag']
-      };
-      
-      const schema = tableSchemas[table];
-      if (!schema) return null;
-      
-      let query = '';
-      let params = [];
-      
-      switch (operation) {
-        case 'create':
-          // Auto set date_update for webconfig if not provided
-          if (table === 'webconfig' && data.date_update === undefined) {
-            data.date_update = new Date();
-          }
-          const createFields = Object.keys(data).filter(field => schema.includes(field));
-          if (createFields.length === 0) return null;
-          
-          // Tambahkan flag = 'open' otomatis untuk tabel yang memiliki kolom flag
-          if (schema.includes('flag') && !createFields.includes('flag')) {
-            createFields.push('flag');
-            data.flag = 'open';
-          }
-          
-          query = `INSERT INTO ${table} (${createFields.join(', ')}) VALUES (${createFields.map(() => '?').join(', ')})`;
-          params = createFields.map(field => data[field]);
-          break;
+            query = `INSERT INTO ${table} (${createFields.join(', ')}) VALUES (${createFields.map(() => '?').join(', ')})`;
+            params = createValues;
+            break;
           
         case 'read':
-          query = `SELECT * FROM ${table}`;
-          const clauses = [];
-          if (where && Object.keys(where).length > 0) {
-            const whereFields = Object.keys(where).filter(field => schema.includes(field));
-            whereFields.forEach(field => {
-              // Text-like columns use LIKE, others exact
-              if (['code','name','type','text_data','text_url','seq','user_update','airport','store_id','pack_type','terminal_code','flag'].includes(field)) {
-                clauses.push(`${field} LIKE ?`);
-                params.push(`%${where[field]}%`);
-              } else {
-                clauses.push(`${field} = ?`);
-                params.push(where[field]);
-              }
-            });
-          }
-          if (valueSearch !== undefined && valueSearch !== null && String(valueSearch).trim() !== '') {
-            const orClauses = [];
-            // text-like columns
-            ['code','name','type','text_data','text_url','seq','user_update','airport','store_id','pack_type','terminal_code','flag']
-              .filter(col => schema.includes(col))
-              .forEach(col => {
-                orClauses.push(`${col} LIKE ?`);
-                params.push(`%${valueSearch}%`);
+            if (Object.keys(whereData).length > 0) {
+              const whereFields = Object.keys(whereData).filter(key => key !== 'table_name' && key !== 'action' && key !== 'tables');
+              // Implementasi fuzzy search untuk semua field
+              const fuzzyConditions = whereFields.map(field => {
+                // Untuk field ID, gunakan exact match
+                if (field === 'id') {
+                  return `${field} = ?`;
+                }
+                // Untuk field lainnya, gunakan LIKE dengan case-insensitive
+                return `LOWER(${field}) LIKE LOWER(?)`;
               });
-            // numeric columns equals
-            const numericVal = parseFloat(valueSearch);
-            if (!isNaN(numericVal)) {
-              ['id','engine_count','price','amount']
-                .filter(col => schema.includes(col))
-                .forEach(col => {
-                  orClauses.push(`${col} = ?`);
-                  params.push(numericVal);
-                });
-            }
-            if (orClauses.length > 0) {
-              clauses.push(`(${orClauses.join(' OR ')})`);
-            }
-          }
-          if (clauses.length > 0) {
-            query += ` WHERE ${clauses.join(' AND ')}`;
+              const whereValues = whereFields.map(field => {
+                // Untuk field ID, gunakan nilai asli
+                if (field === 'id') {
+                  return whereData[field];
+                }
+                // Untuk field lainnya, tambahkan wildcard
+                return `%${whereData[field]}%`;
+              });
+              query = `SELECT * FROM ${table} WHERE ${fuzzyConditions.join(' AND ')}`;
+              params = whereValues;
+              } else {
+              query = `SELECT * FROM ${table}`;
+              params = [];
           }
           break;
           
         case 'update':
-          const updateFields = Object.keys(data).filter(field => schema.includes(field));
-          if (updateFields.length === 0) return null;
-          
-          // Tambahkan flag = 'open' otomatis untuk tabel yang memiliki kolom flag
-          if (schema.includes('flag') && !updateFields.includes('flag')) {
-            updateFields.push('flag');
-            data.flag = 'open';
-          }
-          
-          query = `UPDATE ${table} SET ${updateFields.map(field => `${field} = ?`).join(', ')}`;
-          params = updateFields.map(field => data[field]);
-          
-          if (where && Object.keys(where).length > 0) {
-            const whereFields = Object.keys(where).filter(field => schema.includes(field));
-            if (whereFields.length > 0) {
-              query += ` WHERE ${whereFields.map(field => `${field} = ?`).join(' AND ')}`;
-              params = params.concat(whereFields.map(field => where[field]));
+            if (!whereData.id) {
+              throw new Error(`ID is required for update operation on table ${table}`);
             }
-          }
+            
+            const updateFields = Object.keys(tableData).filter(key => key !== 'id' && key !== 'table_name' && key !== 'action' && key !== 'tables');
+            const updateValues = updateFields.map(field => tableData[field]);
+            
+            query = `UPDATE ${table} SET ${updateFields.map(field => `${field} = ?`).join(', ')} WHERE id = ?`;
+            params = [...updateValues, whereData.id];
           break;
           
         case 'delete':
-          if (!where || Object.keys(where).length === 0) return null;
-          
-          const deleteFields = Object.keys(where).filter(field => schema.includes(field));
-          if (deleteFields.length === 0) return null;
-          
-          query = `DELETE FROM ${table} WHERE ${deleteFields.map(field => `${field} = ?`).join(' AND ')}`;
-          params = deleteFields.map(field => where[field]);
+            if (!whereData.id) {
+              throw new Error(`ID is required for delete operation on table ${table}`);
+            }
+            
+            query = `DELETE FROM ${table} WHERE id = ?`;
+            params = [whereData.id];
           break;
       }
       
-      return { query, params };
-    };
-    
-    // Helper function untuk extract data berdasarkan prefix
-    const extractTableData = (body, table, operation) => {
-      const data = {};
-      const where = {};
-      
-      // 1) Ambil yang prefixed lebih dulu (prioritas prefixed)
-      for (const [key, value] of Object.entries(body)) {
-        if (!key.startsWith(`${table}_`)) continue;
-        const field = key.replace(`${table}_`, '');
-        if (operation === 'read' || operation === 'delete') {
-          where[field] = value;
-        } else if (operation === 'update') {
-          if (field === 'id') {
-            where[field] = value;
-          } else {
-            data[field] = value;
-          }
-        } else {
-          data[field] = value;
-        }
-      }
-      
-      // 2) Untuk single table, ambil juga non-prefixed jika belum terisi oleh prefixed
-      if (table_name !== 'all') {
-        for (const [key, value] of Object.entries(body)) {
-          if (key === 'table_name' || key === 'operation' || key.startsWith(`${table}_`)) continue;
-          if (operation === 'read' || operation === 'delete') {
-            if (where[key] === undefined) where[key] = value;
-          } else if (operation === 'update') {
-            if (key === 'id') {
-              if (where[key] === undefined) where[key] = value;
-            } else if (data[key] === undefined) {
-              data[key] = value;
-            }
-          } else {
-            if (data[key] === undefined) data[key] = value;
-          }
-        }
-      }
-      
-      return { data, where };
-    };
-    
-    // Proses setiap tabel dengan delay untuk menghindari connection overload
-    const results = [];
-    const skippedTables = [];
-    
-    for (let i = 0; i < tablesToProcess.length; i++) {
-      const table = tablesToProcess[i];
-      
-      // Add small delay between queries to prevent connection overload
-      if (i > 0) {
-        await new Promise(resolve => setTimeout(resolve, 100)); // 100ms delay
-      }
-      
-      try {
-        console.log(`Processing table: ${table} (${i + 1}/${tablesToProcess.length})`);
-        
-        // Determine operation for this table based on presence of id
-        let tableOperation = operation;
-        if (operations.includes('create') && operations.includes('update')) {
-          // Mixed mode: check if table has id to determine operation
-          const hasId = req.body[`${table}_id`] || req.body.id;
-          if (hasId) {
-            tableOperation = 'update';
-          } else {
-            // Check if table has any data fields
-            const hasData = Object.keys(req.body).some(key => 
-              key.startsWith(`${table}_`) && key !== `${table}_id`
-            );
-            if (hasData) {
-              tableOperation = 'create';
-            } else {
-              // Skip this table if no data and no id
-              skippedTables.push({
-                table,
-                reason: 'No data provided and no id for mixed operation'
-              });
-              continue;
-            }
-          }
-        }
-        
-        const { data, where } = extractTableData(req.body, table, tableOperation);
-        console.log(`Table ${table} - Operation: ${tableOperation} - Data:`, data, 'Where:', where);
-        
-        // Skip jika tidak ada data untuk operasi create/update
-        if ((tableOperation === 'create' || tableOperation === 'update') && Object.keys(data).length === 0) {
-          skippedTables.push({
-            table,
-            reason: `No data provided for ${tableOperation} operation`
-          });
-          continue;
-        }
-        
-        // Skip jika tidak ada where condition untuk operasi read/delete
-        if ((tableOperation === 'read' || tableOperation === 'delete') && Object.keys(where).length === 0 && table_name === 'all') {
-          skippedTables.push({
-            table,
-            reason: `No where condition provided for ${tableOperation} operation`
-          });
-          continue;
-        }
-        
-        const valueSearch = req.body.value || req.body[`${table}_value`];
-        const queryInfo = buildQuery(table, tableOperation, data, where, valueSearch);
-        if (!queryInfo) {
-          skippedTables.push({
-            table,
-            reason: `No valid fields found for ${operation} operation`
-          });
-          continue;
-        }
-        
-        // Execute query with connection retry
-        let queryResult;
-        let retryCount = 0;
-        const maxRetries = 3;
-        
-        while (retryCount < maxRetries) {
-          try {
-            queryResult = await new Promise((resolve, reject) => {
-              const timeout = setTimeout(() => {
-                reject(new Error('Query timeout'));
-              }, 10000); // 10 second timeout
-              
-              db.query(queryInfo.query, queryInfo.params, (err, result) => {
-                clearTimeout(timeout);
+        // Execute query
+        console.log(`Executing query for ${table}:`, query);
+        console.log(`Query params:`, params);
+        const queryResult = await new Promise((resolve, reject) => {
+          db.query(query, params, (err, result) => {
                 if (err) {
+              console.error(`Database error for ${table}:`, err.message);
                   reject(err);
                 } else {
                   resolve(result);
                 }
               });
             });
-            break; // Success, exit retry loop
-          } catch (error) {
-            retryCount++;
-            if (retryCount >= maxRetries) {
-              throw error; // Max retries reached
-            }
-            console.log(`Retry ${retryCount}/${maxRetries} for table ${table}`);
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
-          }
-        }
         
         // Format result
-        let result = {
-          table,
-          operation: tableOperation,
-          affected_rows: queryResult.affectedRows || 0,
-          fields_used: Object.keys(data).length > 0 ? Object.keys(data) : Object.keys(where)
+        const result = {
+          table: table,
+          operation: action,
+          affected_rows: queryResult.affectedRows || 0
         };
         
-        if (tableOperation === 'create' && queryResult.insertId) {
+        if (action === 'create' && queryResult.insertId) {
           result.insert_id = queryResult.insertId;
         }
         
-        if (tableOperation === 'read') {
+        if (action === 'read') {
           result.record_count = queryResult.length;
           result.data = queryResult;
         }
         
-        if (tableOperation === 'update' && Object.keys(where).length > 0) {
-          result.updated_condition = Object.entries(where).map(([k, v]) => `${k} = '${v}'`).join(' AND ');
-        }
-        
-        if (tableOperation === 'delete' && Object.keys(where).length > 0) {
-          result.deleted_condition = Object.entries(where).map(([k, v]) => `${k} = '${v}'`).join(' AND ');
-        }
-        
         results.push(result);
-        
-      } catch (error) {
-        console.error(`Error processing table ${table}:`, error.message);
-        
-        // More specific error messages
-        let errorMessage = error.message;
-        if (error.message.includes('ECONNRESET')) {
-          errorMessage = 'Database connection lost, please try again';
-        } else if (error.message.includes('timeout')) {
-          errorMessage = 'Query timeout, please try again';
-        } else if (error.message.includes('ER_LOCK_WAIT_TIMEOUT')) {
-          errorMessage = 'Database locked, please try again later';
-        }
-        
-        skippedTables.push({
-          table,
-          reason: errorMessage
+        totalAffectedRows += result.affected_rows || 0;
+      }
+      
+      // Commit transaction if multi table
+      if (multiTableData && Object.keys(multiTableData).length > 0) {
+        await new Promise((resolve, reject) => {
+          db.query('COMMIT', (err) => {
+            if (err) reject(err);
+            else resolve();
+          });
         });
       }
+      
+      } catch (error) {
+      // Rollback transaction if multi table
+      if (multiTableData && Object.keys(multiTableData).length > 0) {
+        await new Promise((resolve, reject) => {
+          db.query('ROLLBACK', (err) => {
+            if (err) reject(err);
+            else resolve();
+          });
+        });
+      }
+      throw error;
     }
     
     // Format response - simplified
     const response = {
-      code: "200",
+      code: 200,
       message: "Success",
       data: {}
     };
     
-    if (operations.includes('read')) {
+    if (action === 'read') {
       // Simplified READ response
       const allData = {};
       let totalRecords = 0;
@@ -1443,7 +1477,6 @@ UserController.universalCrud = async (req, res) => {
         total_records: totalRecords,
         tables: allData
       };
-      
       
     } else {
       // Simplified CREATE/UPDATE/DELETE response
@@ -1466,13 +1499,12 @@ UserController.universalCrud = async (req, res) => {
         total_affected_rows: totalAffected,
         summary: summary
       };
-      
     }
     
     return res.status(200).json(response);
     
   } catch (error) {
-    console.error('❌ Universal CRUD error:', error.message);
+    console.error('Universal CRUD error:', error.message);
     return res.status(500).json({
       code: 500,
       message: 'Terjadi kesalahan server',
@@ -1480,3 +1512,808 @@ UserController.universalCrud = async (req, res) => {
     });
   }
 };
+
+//============================= ENDPOINT GRAB SETUP ===========================================================================================================================================================================================================================================================================================================================================//
+
+UserController.Grab_Setup = async (req, res) => {
+  try {
+    console.log('Endpoint Grab_Setup berhasil diakses');
+    console.log('Request body:', req.body);
+    console.log('Request body type:', typeof req.body);
+    console.log('Request body keys:', Object.keys(req.body || {}));
+    
+    let { type, users, pass } = req.body;
+    console.log('Parsed parameters:');
+    console.log('- type:', type, '(type:', typeof type, ')');
+    console.log('- users:', users, '(type:', typeof users, ')');
+    console.log('- pass:', pass, '(type:', typeof pass, ')');
+    
+    // REMOVED: Quick response untuk testing (was blocking all logic below)
+    // return res.status(200).json({
+    //   code: 200,
+    //   message: "Grab_Setup successful",
+    //   data: {
+    //     type: type,
+    //     users: users,
+    //     pass: pass,
+    //     timestamp: new Date().toISOString()
+    //   }
+    // });
+    
+    // Validasi parameter wajib - hanya type yang wajib
+    if (!type) {
+      console.log('Parameter validation failed:');
+      console.log('- type missing:', !type);
+      
+      return res.status(400).json({
+        code: 400,
+        message: "mohon isi parameter type terlebih dahulu",
+        data: []
+      });
+    }
+    
+    let query, params, result;
+    
+    // Konversi type ke lowercase untuk menghindari case sensitivity
+    type = type.toLowerCase();
+    console.log('Type setelah konversi lowercase:', type);
+    
+    // Fungsi helper untuk normalisasi password
+    const normalizePassword = (password) => {
+      if (!password) return '';
+      return password
+        .toString()
+        .toLowerCase()
+        .replace(/\s+/g, ' ')  // Normalize multiple spaces to single space
+        .replace(/[^a-z0-9\s]/g, '')  // Remove special characters except spaces
+        .replace(/shift(\d+)/g, 'shift $1')  // Add space between shift and number if missing
+        .trim();
+    };
+    
+    // Validasi parameter untuk type yang memerlukan users dan pass (setelah konversi lowercase)
+    if (type !== 'summary' && !type.startsWith('webconfig_') && type !== 'webconfig' && type !== 'login' && type !== 'shift') {
+      // Untuk terminal, engine - users dan pass wajib
+      if (!users || !pass) {
+        console.log('Parameter validation failed for', type);
+        console.log('- users missing:', !users);
+        console.log('- pass missing:', !pass);
+        
+        return res.status(400).json({
+          code: 400,
+          message: "mohon isi parameter users dan pass terlebih dahulu",
+          data: []
+        });
+      }
+      
+      // Normalisasi password untuk validasi yang fleksibel
+      const normalizedPass = normalizePassword(pass);
+      console.log('Original pass:', pass);
+      console.log('Normalized pass:', normalizedPass);
+      
+      // Validasi password dengan berbagai variasi yang diizinkan
+      const allowedPasswords = ['shift 01', 'shift 02'];
+      if (!allowedPasswords.includes(normalizedPass)) {
+        console.log('Password validation failed');
+        console.log('- Original password:', pass);
+        console.log('- Normalized password:', normalizedPass);
+        console.log('- Allowed passwords:', allowedPasswords);
+        
+        return res.status(400).json({
+          code: 400,
+          message: "Terjadi kesalahan pada isi parameter",
+          data: []
+        });
+      }
+    }
+    
+    // Validasi khusus untuk type shift - users dan pass opsional
+    if (type === 'shift') {
+      if (users && pass) {
+        // Jika users dan pass diisi, validasi password dengan normalisasi
+        const normalizedPass = normalizePassword(pass);
+        const allowedPasswords = ['shift 01', 'shift 02'];
+        
+        if (!allowedPasswords.includes(normalizedPass)) {
+          console.log('Shift password validation failed');
+          console.log('- Original password:', pass);
+          console.log('- Normalized password:', normalizedPass);
+          console.log('- Allowed passwords:', allowedPasswords);
+          
+          return res.status(400).json({
+            code: 400,
+            message: "Terjadi kesalahan pada isi parameter",
+            data: []
+          });
+        }
+      }
+      // Jika users dan pass tidak diisi, akan membaca semua data shift
+    }
+    
+    // Validasi untuk type login - users dan pass wajib
+    if (type === 'login') {
+      if (!users || !pass) {
+        console.log('Parameter validation failed for login');
+        console.log('- users missing:', !users);
+        console.log('- pass missing:', !pass);
+        
+        return res.status(400).json({
+          code: 400,
+          message: "mohon isi parameter users dan pass terlebih dahulu",
+          data: []
+        });
+      }
+    }
+    
+    console.log('=== SWITCH CASE DEBUG ===');
+    console.log('About to enter switch statement with type:', type);
+    //============================== SUMMARY = = == = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = ==  = = = = = ==  ========  ==== = = = =        
+    switch (type) {
+      case 'summary':
+        // Baca data penjualan hari ini dengan agregasi untuk summary
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        console.log('Summary query - today:', today);
+        query = `
+          SELECT 
+            MIN(id) as begin_id,
+            MAX(id) as last_id,
+            COUNT(*) as qty,
+            SUM(reprint) as cetak,
+            SUM(uang) as amount,
+            MIN(trx_code) as begin_code,
+            MAX(trx_code) as last_code,
+            SUM(CASE WHEN pack_type = 'KK' THEN uang ELSE 0 END) as total_amount_kk,
+            SUM(CASE WHEN pack_type = 'KK' THEN 1 ELSE 0 END) as total_count_kk,
+            SUM(CASE WHEN pack_type = 'KM' THEN uang ELSE 0 END) as total_amount_km,
+            SUM(CASE WHEN pack_type = 'KM' THEN 1 ELSE 0 END) as total_count_km,
+            SUM(CASE WHEN pack_type = 'KB' THEN uang ELSE 0 END) as total_amount_kb,
+            SUM(CASE WHEN pack_type = 'KB' THEN 1 ELSE 0 END) as total_count_kb,
+            SUM(CASE WHEN payment_type = 'cash' THEN uang ELSE 0 END) as amount_cash,
+            SUM(CASE WHEN payment_type = 'cash' THEN 1 ELSE 0 END) as qty_cash,
+            SUM(CASE WHEN payment_type = 'edc' THEN uang ELSE 0 END) as amount_edc,
+            SUM(CASE WHEN payment_type = 'edc' THEN 1 ELSE 0 END) as qty_edc,
+            SUM(CASE WHEN payment_type = 'qris' THEN uang ELSE 0 END) as amount_qris,
+            SUM(CASE WHEN payment_type = 'qris' THEN 1 ELSE 0 END) as qty_qris,
+            SUM(CASE WHEN pack_type = 'KK' AND payment_type = 'cash' THEN uang ELSE 0 END) as amount_kk_cash,
+            SUM(CASE WHEN pack_type = 'KK' AND payment_type = 'cash' THEN 1 ELSE 0 END) as count_kk_cash,
+            SUM(CASE WHEN pack_type = 'KK' AND payment_type = 'edc' THEN uang ELSE 0 END) as amount_kk_edc,
+            SUM(CASE WHEN pack_type = 'KK' AND payment_type = 'edc' THEN 1 ELSE 0 END) as count_kk_edc,
+            SUM(CASE WHEN pack_type = 'KK' AND payment_type = 'qris' THEN uang ELSE 0 END) as amount_kk_qris,
+            SUM(CASE WHEN pack_type = 'KK' AND payment_type = 'qris' THEN 1 ELSE 0 END) as count_kk_qris,
+            SUM(CASE WHEN pack_type = 'KM' AND payment_type = 'cash' THEN uang ELSE 0 END) as amount_km_cash,
+            SUM(CASE WHEN pack_type = 'KM' AND payment_type = 'cash' THEN 1 ELSE 0 END) as count_km_cash,
+            SUM(CASE WHEN pack_type = 'KM' AND payment_type = 'edc' THEN uang ELSE 0 END) as amount_km_edc,
+            SUM(CASE WHEN pack_type = 'KM' AND payment_type = 'edc' THEN 1 ELSE 0 END) as count_km_edc,
+            SUM(CASE WHEN pack_type = 'KM' AND payment_type = 'qris' THEN uang ELSE 0 END) as amount_km_qris,
+            SUM(CASE WHEN pack_type = 'KM' AND payment_type = 'qris' THEN 1 ELSE 0 END) as count_km_qris,
+            SUM(CASE WHEN pack_type = 'KB' AND payment_type = 'cash' THEN uang ELSE 0 END) as amount_kb_cash,
+            SUM(CASE WHEN pack_type = 'KB' AND payment_type = 'cash' THEN 1 ELSE 0 END) as count_kb_cash,
+            SUM(CASE WHEN pack_type = 'KB' AND payment_type = 'edc' THEN uang ELSE 0 END) as amount_kb_edc,
+            SUM(CASE WHEN pack_type = 'KB' AND payment_type = 'edc' THEN 1 ELSE 0 END) as count_kb_edc,
+            SUM(CASE WHEN pack_type = 'KB' AND payment_type = 'qris' THEN uang ELSE 0 END) as amount_kb_qris,
+            SUM(CASE WHEN pack_type = 'KB' AND payment_type = 'qris' THEN 1 ELSE 0 END) as count_kb_qris,
+            MAX(label) as label
+          FROM penjualan 
+          WHERE DATE(tgl) = ? AND shift_code = ?
+          GROUP BY engine_code
+        `;
+        params = [today, users || 'Unknown'];
+        console.log('Summary query:', query);
+        console.log('Summary params:', params);
+        break;
+        
+      case 'terminal':
+        // Baca data location berdasarkan code dengan fuzzy search
+        query = 'SELECT * FROM location WHERE LOWER(code) LIKE LOWER(?) OR LOWER(name) LIKE LOWER(?)';
+        params = [`%${users}%`, `%${users}%`];
+        console.log('=== TERMINAL DEBUG ===');
+        console.log('Terminal query:', query);
+        console.log('Terminal params:', params);
+        console.log('Searching for location with fuzzy search:', users);
+        console.log('=== END TERMINAL DEBUG ===');
+        break;
+        
+      case 'engine':
+        // Baca data engine berdasarkan code atau location_code dengan fuzzy search
+        query = 'SELECT code, location_code as name FROM engine WHERE LOWER(code) LIKE LOWER(?) OR LOWER(location_code) LIKE LOWER(?)';
+        params = [`%${users}%`, `%${users}%`];
+        console.log('=== ENGINE DEBUG ===');
+        console.log('Engine query:', query);
+        console.log('Engine params:', params);
+        console.log('Searching for engine with fuzzy search:', users);
+        console.log('=== END ENGINE DEBUG ===');
+        break;
+        
+      case 'login':
+        // Baca data users berdasarkan username dan password
+        const bcrypt = require('bcryptjs');
+        const userData = await User.getUserByUsername(users);
+        
+        if (!userData) {
+          return res.status(400).json({
+            code: 400,
+            message: "Terjadi kesalahan pada isi parameter",
+            data: []
+          });
+        }
+        
+        const isPasswordValid = await bcrypt.compare(pass, userData.pass);
+        if (!isPasswordValid) {
+          return res.status(400).json({
+            code: 400,
+            message: "Terjadi kesalahan pada isi parameter",
+            data: []
+          });
+        }
+        
+        // Return user data tanpa password with parseInt for numeric values
+        const userResponse = {
+          id: parseInt(userData.id, 10),
+          username: userData.username,
+          userdesc: userData.userdesc,
+          usertype: parseInt(userData.usertype, 10),
+          jenisuser: parseInt(userData.jenisuser, 10),
+          cabang: parseInt(userData.cabang, 10),
+          cookie1: userData.cookie1
+        };
+        
+        // Custom JSON response with alternating field order for login
+        const fieldNames = ['id', 'username', 'userdesc', 'usertype', 'jenisuser', 'cabang', 'cookie1'];
+        
+        // Create object with alternating pattern using Map to maintain order
+        const alternatingObj = {};
+        const keyOrder = [];
+        
+        fieldNames.forEach((fieldName, fieldIndex) => {
+          const value = userResponse[fieldName];
+          // Convert to int if it's a number string or number
+          let processedValue = value;
+          if (typeof value === 'string' && !isNaN(value) && value.trim() !== '') {
+            processedValue = parseInt(value, 10);
+          } else if (typeof value === 'number') {
+            processedValue = parseInt(value, 10);
+          }
+          
+          // Add field name first, then numeric index
+          alternatingObj[fieldName] = processedValue;
+          alternatingObj[fieldIndex] = processedValue;
+          keyOrder.push(fieldName, fieldIndex.toString());
+        });
+        
+        // Create ordered object using Proxy
+        const orderedObj = new Proxy(alternatingObj, {
+          ownKeys: function(target) {
+            return keyOrder;
+          },
+          getOwnPropertyDescriptor: function(target, key) {
+            return {
+              enumerable: true,
+              configurable: true,
+              value: target[key]
+            };
+          }
+        });
+        
+        res.status(200).json({
+          code: 200,
+          message: "Success",
+          data: [orderedObj]
+        });
+        return;
+        
+      case 'webconfig':
+        // Baca semua data webconfig tanpa filter
+        query = 'SELECT * FROM webconfig';
+        params = [];
+        console.log('=== WEBCONFIG DEBUG ===');
+        console.log('Webconfig query:', query);
+        console.log('Webconfig params:', params);
+        console.log('Reading all webconfig data');
+        console.log('=== END WEBCONFIG DEBUG ===');
+        break;
+        
+      default:
+        // Cek apakah type dimulai dengan 'webconfig_'
+        if (type.startsWith('webconfig_')) {
+          // Parse type untuk mendapatkan field name
+          // Format: webconfig_[field_name] -> field_name
+          const fieldName = type.replace('webconfig_', '');
+          console.log('=== WEBCONFIG DEBUG ===');
+          console.log('Original type:', type);
+          console.log('Extracted fieldName:', fieldName);
+          console.log('Type length:', type.length);
+          console.log('webconfig_ length:', 'webconfig_'.length);
+          
+          // Query untuk mengambil data dari webconfig dengan fuzzy search
+          // Parameter users dan pass tidak digunakan untuk webconfig
+          query = 'SELECT * FROM webconfig WHERE LOWER(code) LIKE LOWER(?) OR LOWER(name) LIKE LOWER(?) OR LOWER(type) LIKE LOWER(?)';
+          params = [`%${fieldName}%`, `%${fieldName}%`, `%${fieldName}%`];
+          console.log('Final query:', query);
+          console.log('Params:', params);
+          console.log('Field to search:', fieldName);
+          console.log('=== END WEBCONFIG DEBUG ===');
+          break;
+        } else {
+          // Type tidak dikenal
+          return res.status(400).json({
+            code: 400,
+            message: "Terjadi kesalahan pada isi parameter",
+            data: []
+          });
+        }
+        
+      case 'shift':
+        // Baca data empshift berdasarkan code dengan fuzzy search atau semua data
+        if (users) {
+          query = 'SELECT * FROM empshift WHERE LOWER(code) LIKE LOWER(?)';
+          params = [`%${users}%`];
+        } else {
+          query = 'SELECT * FROM empshift';
+          params = [];
+        }
+        console.log('=== SHIFT DEBUG ===');
+        console.log('Shift query:', query);
+        console.log('Shift params:', params);
+        console.log('Searching for shift with fuzzy search:', users);
+        console.log('=== END SHIFT DEBUG ===');
+        break;
+    }
+    
+    console.log('=== AFTER SWITCH CASE ===');
+    console.log('Final query:', query);
+    console.log('Final params:', params);
+    console.log('Type for execution check:', type);
+    console.log('=== END AFTER SWITCH ===');
+    
+    // Execute query untuk type selain login
+    if (type !== 'login') {
+      console.log('Executing query:', query);
+      console.log('With params:', params);
+      
+      // Execute database query
+      result = await new Promise((resolve, reject) => {
+        db.query(query, params, (err, results) => {
+          if (err) {
+            console.error('Database query error:', err.message);
+            reject(err);
+          } else {
+            console.log('✅ Query executed successfully');
+            console.log('Query result count:', results.length);
+            resolve(results);
+          }
+        });
+      });
+      
+      // Handle empty result
+      if (result.length === 0) {
+        console.log('No data found for query');
+        
+        // For summary type, return empty data instead of error
+        if (type === 'summary') {
+          const shiftName = users || 'Unknown';
+          const message = `${shiftName}\nEngine: 1\nBegin ID: 0\nLast ID: 0\nQty : 0\nReprint: 0\nTotal: 0\nRekap Payment\n\nCash: 0\nEDC: 0\nQris: 0 0\nTotal: 0\nRekap Standar\n\nCash: 0\nEDC: 0\nQris: 0 0\nTotal: 0\nRekap Golfbag\n\nCash: 0\nEDC: 0\nQris: 0\nTotal: 0\nRekap Oversize\n\nCash: 0\nEDC: 0\nQris: 0\nTotal: 0\n`;
+          
+          const emptyData = {
+            label:      'null;',
+            qty:        'null',
+            begin_code: 'null',
+            last_code:  'null',
+            amount:     'null',
+            cetak:      'null', 
+            total_amount_kk: 'null',
+            total_count_kk: 'null',
+            amount_kk_cash: null,
+            count_kk_cash: null,
+            amount_kk_edc: null,
+            count_kk_edc: null,
+            amount_kk_qris: null,
+            count_kk_qris: null,
+            total_amount_km: null,
+            total_count_km: null,
+            amount_km_cash: null,
+            count_km_cash: null,
+            amount_km_edc: null,
+            count_km_edc: null,
+            amount_km_qris: null,
+            count_km_qris: null,
+            total_amount_kb: null,
+            total_count_kb: null,
+            amount_kb_cash: null,
+            count_kb_cash: null,
+            amount_kb_edc: null,
+            count_kb_edc: null,
+            amount_kb_qris: null,
+            count_kb_qris: null,
+            amount_cash: null,
+            qty_cash: null,
+            amount_edc: null,
+            qty_edc: null,
+            amount_qris: null,
+            qty_qris: null
+          };
+          
+          // Format data dengan berpasangan sesuai urutan
+          const parts = [];
+          Object.entries(emptyData).forEach(([key, value], index) => {
+            parts.push(`${JSON.stringify(key)}:${JSON.stringify(value)}`);
+            parts.push(`${JSON.stringify(String(index))}:${JSON.stringify(value)}`);
+          });
+          
+          const dataJson = `{${parts.join(',')}}`;
+          const payload = `{"code":"200","message":${JSON.stringify(message)},"data":[${dataJson}]}`;
+          return res.status(200).type('application/json').send(payload);
+        }
+        
+        // For other types, return error
+        return res.status(400).json({
+          code: 400,
+          message: "Terjadi kesalahan pada isi parameter",
+          data: []
+        });
+      }
+      //MEssege //       //MEssege //       //MEssege //      //MEssege //      //MEssege //      //MEssege //
+      // Process result - Custom JSON response with alternating field order for all types
+      let fieldNames = [];
+      if (type === 'terminal') {
+        fieldNames = ['id', 'code', 'name', 'airport', 'store_id', 'flag'];
+      } else if (type === 'engine') {
+        fieldNames = ['name', 'code'];
+      } else if (type === 'shift') {
+        fieldNames = ['code'];
+      } else if (type === 'webconfig') {
+        fieldNames = ['id', 'code', 'name', 'type', 'amount', 'flag'];
+      } else if (type === 'summary') {
+        // Summary: format khusus dengan message dan data berpasangan
+        const row       = result[0];
+        const shiftName = users || 'Unknown';
+        const engine    = '1';
+        const beginId   = row.begin_id || 0;
+        const lastId    = row.last_id || 0;
+        const qty       = row.qty || 0;
+        const reprint   = row.cetak || 0;
+        const total     = row.amount || 0;
+
+        // Helper function untuk format angka dengan pemisah ribuan (titik)
+        const formatNumber = (num) => {
+          if (!num || num === 0) return '0';
+          return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        };
+
+        //===========================================================         //================================================================================== = = = = = = = = = = = = = = = == =  ==  = = == = = = ==== = = = = = =  = =  = =  = =  =  = =  = = =  =  =  = = ==  =  = = = = = ==  = =  =  = =  = = =  = = = =  = = =  = = = =  =
+        const message = `${shiftName}\nEngine: ${engine}\nBegin ID: ${beginId}\nLast ID: ${lastId}\nQty : ${qty}\nReprint: ${reprint}\nTotal: ${formatNumber(total)}\nRekap Payment\n\nCash: ${row.qty_cash || 0}\nEDC: ${row.qty_edc || 0}\nQris: ${row.qty_qris || 0} ${formatNumber(row.amount_qris || 0)}\nTotal: ${formatNumber(total)}\nRekap Standar\n\nCash: ${row.count_kk_cash || 0}\nEDC: ${row.count_kk_edc || 0}\nQris: ${row.count_kk_qris || 0} ${formatNumber(row.amount_kk_qris || 0)}\nTotal: ${formatNumber(row.total_amount_kk || 0)}\nRekap Golfbag\n\nCash: ${row.count_km_cash || 0}\nEDC: ${row.count_km_edc || 0}\nQris: ${row.count_km_qris || 0}\nTotal: ${formatNumber(row.total_amount_km || 0)}\nRekap Oversize\n\nCash: ${row.count_kb_cash || 0}\nEDC: ${row.count_kb_edc || 0}\nQris: ${row.count_kb_qris || 0}\nTotal: ${formatNumber(row.total_amount_kb || 0)}\n`;
+        //===========================================================        //=========================================================== = = = = =  = = = =  = = = = = = = = = = = == = = = = = = = = =  === = = = = = = ==== === =  == = = = =========  == = = = = = = = = = = = = = = == = = = = = = = = = = = = = = =  ==  = = = = == =  = = = = = = == = 
+
+        const orderedData = {
+          label:           row.label || 'Unknown',
+          qty:             String(row.qty || 'null'),
+          begin_code:      row.begin_code || '',
+          last_code:       row.last_code || '',
+          amount:          formatNumber(row.amount || 0),
+          cetak:           String(row.cetak || 0),
+          total_amount_kk: formatNumber(row.total_amount_kk || 0),
+          total_count_kk:  String(row.total_count_kk || 0),
+          amount_kk_cash:  row.amount_kk_cash ?     formatNumber(row.amount_kk_cash)  : null,
+          count_kk_cash:   row.count_kk_cash ?      String(row.count_kk_cash)   : null,
+          amount_kk_edc:   row.amount_kk_edc ?      formatNumber(row.amount_kk_edc)   : null,
+          count_kk_edc:    row.count_kk_edc ?       String(row.count_kk_edc)    : null,
+          amount_kk_qris:  row.amount_kk_qris ?     formatNumber(row.amount_kk_qris)  : null,
+          count_kk_qris:   row.count_kk_qris ?      String(row.count_kk_qris)   : null,
+          total_amount_km: row.total_amount_km ?    formatNumber(row.total_amount_km) : null,
+          total_count_km:  row.total_count_km ?     String(row.total_count_km)  : null,
+          amount_km_cash:  row.amount_km_cash ?     formatNumber(row.amount_km_cash)  : null,
+          count_km_cash:   row.count_km_cash ?      String(row.count_km_cash)   : null,
+          amount_km_edc:   row.amount_km_edc ?      formatNumber(row.amount_km_edc)   : null,
+          count_km_edc:    row.count_km_edc ?       String(row.count_km_edc)    : null,
+          amount_km_qris:  row.amount_km_qris ?     formatNumber(row.amount_km_qris)  : null,
+          count_km_qris:   row.count_km_qris ?      String(row.count_km_qris)   : null,
+          total_amount_kb: row.total_amount_kb ?    formatNumber(row.total_amount_kb) : null,
+          total_count_kb:  row.total_count_kb ?     String(row.total_count_kb)  : null,
+          amount_kb_cash:  row.amount_kb_cash ?     formatNumber(row.amount_kb_cash)  : null,
+          count_kb_cash:   row.count_kb_cash ?      String(row.count_kb_cash)   : null,
+          amount_kb_edc:   row.amount_kb_edc ?      formatNumber(row.amount_kb_edc)   : null,
+          count_kb_edc:    row.count_kb_edc ?       String(row.count_kb_edc)    : null,
+          amount_kb_qris:  row.amount_kb_qris ?     formatNumber(row.amount_kb_qris)  : null,
+          count_kb_qris:   row.count_kb_qris ?      String(row.count_kb_qris)   : null,
+          amount_cash:     row.amount_cash ?        formatNumber(row.amount_cash)     : null,
+          qty_cash:        row.qty_cash ?           String(row.qty_cash)        : null,
+          amount_edc:      row.amount_edc ?         formatNumber(row.amount_edc)      : null,
+          qty_edc:         row.qty_edc ?            String(row.qty_edc)         : null,
+          amount_qris:     row.amount_qris ?        formatNumber(row.amount_qris)     : null,
+          qty_qris:        row.qty_qris ?           String(row.qty_qris)        : null
+        };
+        
+        // Format data dengan berpasangan sesuai urutan
+        const parts = [];
+        Object.entries(orderedData).forEach(([key, value], index) => {
+          parts.push(`${JSON.stringify(key)}:${JSON.stringify(value)}`);
+          parts.push(`${JSON.stringify(String(index))}:${JSON.stringify(value)}`);
+        });
+        
+        const dataJson = `{${parts.join(',')}}`;
+        const payload = `{"code":"200","message":${JSON.stringify(message)},"data":[${dataJson}]}`;
+        return res.status(200).type('application/json').send(payload);
+      } else if (type.startsWith('webconfig_')) {
+        // For webconfig, only return code and amount
+        const processedResult = result.map(row => ({
+          code: row.code,
+          amount: parseInt(row.amount, 10)
+        }));
+        
+        return res.status(200).json({
+          code: 200,
+          message: "Success",
+          data: processedResult
+        });
+      } else {
+        // Default field names
+        fieldNames = Object.keys(result[0] || {});
+      }
+      
+      // Create objects with alternating pattern
+      const processedResult = result.map(row => {
+        const alternatingObj = {};
+        const keyOrder = [];
+        
+        fieldNames.forEach((fieldName, fieldIndex) => {
+          const value = row[fieldName];
+          // Convert to int if it's a number string or number
+          let processedValue = value;
+          if (typeof value === 'string' && !isNaN(value) && value.trim() !== '') {
+            processedValue = parseInt(value, 10);
+          } else if (typeof value === 'number') {
+            processedValue = parseInt(value, 10);
+          }
+          
+          // Add field name first, then numeric index
+          alternatingObj[fieldName] = processedValue;
+          alternatingObj[fieldIndex] = processedValue;
+          keyOrder.push(fieldName, fieldIndex.toString());
+        });
+        
+        // Create ordered object using Proxy
+        const orderedObj = new Proxy(alternatingObj, {
+          ownKeys: function(target) {
+            return keyOrder;
+          },
+          getOwnPropertyDescriptor: function(target, key) {
+            return {
+              enumerable: true,
+              configurable: true,
+              value: target[key]
+            };
+          }
+        });
+        
+        return orderedObj;
+      });
+      
+      return res.status(200).json({
+        code: 200,
+        message: "Success",
+        data: processedResult
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error di Grab_Setup:', error.message);
+    return res.status(500).json({
+      code: 500,
+      message: "Terjadi kesalahan server",
+      data: []
+    });
+  }
+};
+
+//============================= ENDPOINT TES = = = = = = ==  = = = = = = = = = = = = = = = = = = 
+UserController.tes = async (req, res) => {
+  try {
+    console.log('tes berhasil diakses');
+    return res.status(200).json({
+      code: 200,
+      message: "Endpoint tes berhasil diakses",
+      data: {
+        success: true,
+        timestamp: new Date().toLocaleString('id-ID', {timeZone: 'Asia/Jakarta'}),
+        message: "🔥 Endpoint tes berfungsi dengan baik!"
+      }
+    });
+  } catch (error) {
+    console.error('Error di tes:', error.message);
+    return res.status(500).json({
+      code: 500,
+      message: "Terjadi kesalahan server",
+      data: []
+    });
+  }
+};
+//================================ ENDPOINT CHECK TRX ========================= = = = = = = = = = = = = = = = = = = = = = = = = = =  = = = 
+UserController.Check_Trx = (req, res) => {
+  console.log('Check_Trx endpoint diakses');
+  
+  // Ambil parameter QRCode dari body request
+  const { QRCode } = req.body;
+  
+  // Validasi parameter QRCode
+  if (!QRCode) {
+    return res.status(400).json({
+      code: 400,
+      message: "Parameter QRCode wajib diisi",
+      data: {
+        success: false
+      }
+    });
+  }
+  
+  // Query untuk mengecek apakah QR code sudah ada di database
+  const query = "SELECT trx_code FROM penjualan WHERE trx_code = ?";
+  
+  db.query(query, [QRCode], (error, results) => {
+    if (error) {
+      console.error('Error di Check_Trx:', error.message);
+      return res.status(500).json({
+        code: 500,
+        message: "Terjadi kesalahan server",
+        data: {
+          success: false,
+          error: error.message
+      }
+      });
+    }
+    
+    // Jika QR code ditemukan, berarti sudah dipakai (401 Unauthorized)
+    if (results.length > 0) {
+      return res.status(401).json({
+        code: 401,
+        message: `Unauthorized QrCode ${QRCode} already to used`,
+        data: []
+      });
+    }
+    
+    // Jika QR code tidak ditemukan, berarti belum dipakai (200 OK)
+    return res.status(200).json({
+      code: 200,
+      message: "OK",
+      data: []
+      
+    });
+  });
+};
+
+
+//=================================== grabdata_payment = = = = = = = = =    = = = = = = = == == = = = =  = = = = =
+
+UserController.grabdata_payment = async (req, res) => {
+  try {
+    console.log('Endpoint grabdata_payment berhasil diakses');
+    console.log('Request body:', req.body);
+    
+    // Tidak memerlukan parameter apapun, ambil semua data dari cfg_payment
+    // Query data dari tabel cfg_payment - hanya data dengan flag "open"
+    //= = = = = = = = = = = = =  FLAG FILTER = = = = = = = = B = == = ==  = = = = = = = == =  ======================
+    const query = `
+      SELECT id, code, name, flag
+      FROM cfg_payment
+      WHERE flag = "open"
+    `;
+    //=========== = = = == = = = = = =  = = = = = == =  = = = = == = =  = = == =  = == = = = = = //= = = = = = = = = = = = 
+    db.query(query, (err, results) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({
+          code: "500",
+          message: "Database error: " + err.message,
+          data: []
+        });
+      }
+      
+      console.log('Query results:', results);
+      
+      // Cek apakah data ditemukan
+      if (!results || results.length === 0) {
+        return res.status(404).json({
+          code: "404",
+          message: "Data tidak ditemukan",
+          data: []
+        });
+      }
+      
+      // Return response dengan format yang diminta
+      return res.status(200).json({
+        code: "200",
+        message: "OK",
+        data: results
+      });
+    });
+    
+  } catch (error) {
+    console.error('Error di grabdata_payment:', error);
+    return res.status(500).json({
+      code: "500",
+      message: "Internal server error: " + error.message,
+      data: []
+    });
+  }
+};
+
+//======================    ========== grabdata_price = = = = = = = = =    = = = = = = = == == = = = =  = = = = =
+
+UserController.grabdata_price = async (req, res) => {
+  try {
+    console.log('Endpoint grabdata_price berhasil diakses');
+    console.log('Request body:', req.body);
+    
+    const { terminal_code } = req.body;
+    
+    // Validasi parameter
+    if (!terminal_code) {
+      return res.status(400).json({
+        code: "400",
+        message: "Parameter terminal_code wajib diisi",
+        data: []
+      });
+    }
+    
+    // Query data dari tabel wrap_price - hanya data dengan flag "open"
+    const query = `
+      SELECT id, terminal_code, pack_type, name, price, flag
+      FROM wrap_price 
+      WHERE terminal_code = ? AND flag = "open"
+    `;
+    
+    db.query(query, [terminal_code], (err, results) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({
+          code: "500",
+          message: "Database error: " + err.message,
+          data: []
+        });
+      }
+      
+      console.log('Query results:', results);
+      
+      // Cek apakah data ditemukan
+      if (!results || results.length === 0) {
+        return res.status(404).json({
+          code: "404",
+          message: "Data tidak ditemukan",
+          data: []
+        });
+      }
+      
+      // Format price dengan koma pemisah ribuan
+      const formattedResults = results.map(item => {
+        // Hapus koma atau titik yang sudah ada, ambil hanya angka
+        let priceNum = item.price;
+        if (typeof priceNum === 'string') {
+          priceNum = priceNum.replace(/[.,]/g, '');
+        }
+        
+        // Format dengan koma pemisah ribuan
+        const formattedPrice = Number(priceNum).toLocaleString('en-US');
+        
+        return {
+          ...item,
+          price: formattedPrice
+        };
+      });
+      
+      // Return response dengan format yang diminta
+      return res.status(200).json({
+        code: "200",
+        message: "OK",
+        data: formattedResults
+      });
+    });
+    
+  } catch (error) {
+    console.error('Error di grabdata_price:', error);
+    return res.status(500).json({
+      code: "500",
+      message: "Internal server error: " + error.message,
+      data: []
+    });
+  }
+};
+//============================================================================================================================================================================================================================================================================================================================================================================================
+
+module.exports = UserController; 

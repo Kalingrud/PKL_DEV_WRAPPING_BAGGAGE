@@ -45,10 +45,10 @@ try {
 
 // Konfigurasi database MySQL
 const db = mysql.createConnection({
-  host: '103.153.61.219',
-  user: 'pkl_dev',
-  password: 'Pkl_dev123!',
-  database: 'pkl_wrapping'
+  host: process.env.DB_HOST || '127.0.0.1',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD !== undefined ? process.env.DB_PASSWORD : '',
+  database: process.env.DB_NAME || 'pkl_wrapping'
 });
 
 // Test koneksi database

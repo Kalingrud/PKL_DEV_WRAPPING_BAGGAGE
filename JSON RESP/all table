@@ -1,0 +1,56 @@
+{
+  "operations": [
+    {
+      "table": "cfg_payment",
+      "action": "delete",
+      "data": {
+        "id": 1
+      }
+    },
+    {
+      "table": "location",
+      "action": "create",
+      "data": {
+        "code": "TERM008",
+        "name": "Terminal 8",
+        "airport": "PKU"
+      }
+    },
+    {
+      "table": "empshift",
+      "action": "update",
+      "data": {
+        "id": 4,
+        "work_in": "16:00",
+        "work_out": "01:00"
+      }
+    },
+    {
+      "table": "engine",
+      "action": "read",
+      "data": {}
+    },
+    {
+      "table": "webconfig",
+      "action": "delete",
+      "data": {
+        "id": 3
+      }
+    },
+    {
+      "table": "wrap_price",
+      "action": "create",
+      "data": {
+        "terminal_code": "TERM008",
+        "pack_type": "KM",
+        "name": "Golfbag",
+        "price": 120000
+      }
+    }
+  ]
+}
+
+
+
+
+

@@ -6,6 +6,12 @@ class ApiLog {  //membuat kelas apilog untuk mengelola logging API
     return new Promise((resolve, reject) => {     //membuat promise baru untuk oprasi database
       //apa itu promise? promise adalah cara untuk menangani oprasi asinkron di javascript
       //apa itu asinkron? asinkron adalah oprasi yang tidak langsung selesai, misalnya oprasi database.
+      
+      // Timeout mechanism untuk prevent hanging queries (30 detik untuk logging)
+      const timeout = setTimeout(() => {
+        reject(new Error('ApiLog query timeout after 30 seconds'));
+      }, 30000); // 30 detik timeout (lebih lama karena logging non-critical)
+      
       const insertQuery = `
         INSERT INTO api_log (
           incoming, from_ip, duration, url_method, url_hit, url_full,
@@ -35,6 +41,8 @@ class ApiLog {  //membuat kelas apilog untuk mengelola logging API
       //insertQuery = string query SQL yang tadi kita bikin (INSERT INTO api_log ...).
       //values = array data yang akan menggantikan tanda ? di query.
       //(err, result) => { ... } = callback yang dijalankan setelah query selesai.
+        clearTimeout(timeout); // Clear timeout jika query selesai
+        
         if (err) {  // memeriksa apakah ada eror saat menjalankan query
           reject(err);   //kalo ada eror, Promise akan dianggap gagal (rejected) dan eror nya diteruskan ke catch
         } else {   //kalo ga ada eror, promise dianggap berhasil(solved)

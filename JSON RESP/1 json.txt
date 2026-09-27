@@ -1,0 +1,28 @@
+{
+  "table_name": "cfg_payment",
+  "action": "create",
+  "code": "QRIS",
+  "name": "QR Code Payment"
+}
+
+
+{
+  "operations": [
+    {
+      "table": "cfg_payment",
+      "action": "create",
+      "data": {
+        "code": "Gold",
+        "name": "xau"
+      }
+    },
+    {
+      "table": "cfg_payment",
+      "action": "delete",
+      "data": {
+        "id": 3 ,
+        "name": "KASPRO"
+      }
+    }
+  ]
+}

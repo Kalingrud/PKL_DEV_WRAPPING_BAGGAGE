@@ -6,8 +6,7 @@ const HOST = '0.0.0.0';
 
 app.listen(PORT, HOST, () => {
   const localIPs = getLocalIPAddress();
-  
-  console.log('Server started on port', PORT);
+  console.log('Server Berjalan pada', PORT);
   console.log('');
   console.log('Access URLs:');
   console.log(`Localhost: http://localhost:${PORT}`);

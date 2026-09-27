@@ -86,10 +86,234 @@ Contoh agent_detect :
     "GATEWAY_INTERFACE": "CGI/1.1",
     "SERVER_PROTOCOL": "HTTP/1.1",
     "REQUEST_METHOD": "POST",
-    "QUERY_STRING": "",
+    "QUERY_STRING": "", 
     "REQUEST_URI": "/wrapapk/Grab_Setup.php",=
     "SCRIPT_NAME": "/wrapapk/Grab_Setup.php",
     "PHP_SELF": "/wrapapk/Grab_Setup.php",
     "REQUEST_TIME_FLOAT": 1745913079.717708,
     "REQUEST_TIME": 1745913079
 }
+
+
+{
+  "table_name": "empshift",
+  "action": "create",
+  "code": "Shift 01",
+  "work_in": "08:00:00",
+  "work_out": "16:00:00",
+  "flag": "open"
+}
+
+{
+  "table_name": "empshift",
+  "action": "update",
+  "id": 4,
+  "work_in": "09:00:00",
+  "work_out": "17:00:00",
+  "flag": "open"
+}
+
+{
+  "table_name": "empshift",
+  "action": "read",
+  "work_in": "09:00:00",
+  "work_out": "17:00:00",
+  "flag": "open"
+}
+
+{
+  "table_name": "empshift",
+  "action": "delete",
+  "id": 59
+}
+
+
+{
+  "table_name": "cfg_payment",
+  "action": "create",
+  "code": "CASH01",
+  "name": "Pembayaran Tunai",
+  "flag": "open"
+}   
+
+{
+  "table_name": "cfg_payment",  
+  "action": "read",
+  "code": "CASH01",
+  "name": "Pembayaran Tunai",
+  "flag": "open"
+}   
+
+{
+  "table_name": "engine",
+  "action": "create",
+  "code": "ENG001",
+  "location_code": "L001",
+  "engine_count": 5,
+  "flag": "open"
+}
+
+
+{
+  "table_name": "location",
+  "action": "create",
+  "code": "L001",
+  "name": "Jakarta Utara",
+  "flag": "open"
+}
+
+
+{
+  "table_name": "web_config",
+  "action": "create",
+  "code": "WC001",
+  "name": "Max Upload Size",
+  "value": "10MB",
+  "flag": "open"
+}
+
+{
+  "table_name": "wrapprice",
+  "action": "create",
+  "code": "WP001",
+  "name": "Wrapping Premium",
+  "price": 150000.00,
+  "flag": "open"
+}
+
+
+{
+  "operations": [
+    {
+      "table": "location",
+      "action": "create",
+      "data": {
+        "code": "L003",
+        "name": "Bandung"
+      }
+    },
+    {
+      "table": "engine",
+      "action": "create",
+      "data": {
+        "code": "ENG003",
+        "location_code": "L003",
+        "engine_count": 12
+      }
+    },
+    {
+      "table": "wrap_price",
+      "action": "create",
+      "data": {
+        "terminal_code": "BDG-T1A",
+        "pack_type": "REG",
+        "name": "Wrapping Bandung",
+        "price": 120000.00
+      }
+    }
+  ]
+}
+
+
+{
+  "operations": [
+    {
+      "table": "location",
+      "action": "create",
+      "data": {
+        "code": "L005",
+        "name": "Jakarta Pusat",
+        "airport": "CGK"
+      }
+    },
+    {
+      "table": "engine",
+      "action": "read",
+      "data": {
+        "location_code": "L005"
+      }
+    },
+    {
+      "table": "wrap_price",
+      "action": "create",
+      "data": {
+        "terminal_code": "JKT-T1A",
+        "pack_type": "REG",
+        "name": "Wrapping Jakarta",
+        "price": 100000
+      }
+    },
+    {
+      "table": "cfg_payment",
+      "action": "create",
+      "data": {
+        "code": "PAY001",
+        "name": "Cash Payment"
+      }
+    },
+    {
+      "table": "empshift",
+      "action": "create",
+      "data": {
+        "code": "SHIFT001",
+        "name": "Shift Pagi"
+      }
+    },
+    {
+      "table": "webconfig",
+      "action": "create",
+      "data": {
+        "code": "WEB001",
+        "name": "Main Config",
+        "type": "setting"
+      }
+    },
+    {
+      "table": "location",
+      "action": "update",
+      "data": {
+        "id": 1,
+        "name": "Jakarta Updated"
+      }
+    },
+    {
+      "table": "engine",
+      "action": "delete",
+      "data": {
+        "id": 1
+      }
+    },
+    {
+      "table": "wrap_price",
+      "action": "read",
+      "data": {
+        "terminal_code": "JKT-T1A"
+      }
+    },
+    {
+      "table": "cfg_payment",
+      "action": "update",
+      "data": {
+        "id": 1,
+        "name": "Updated Payment"
+      }
+    },
+    {
+      "table": "empshift",
+      "action": "read",
+      "data": {}
+    },
+    {
+      "table": "webconfig",
+      "action": "delete",
+      "data": {
+        "id": 1
+      }
+    }
+  ]
+}
+
+
+
+
+

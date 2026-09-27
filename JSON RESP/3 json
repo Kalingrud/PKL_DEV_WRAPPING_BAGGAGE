@@ -1,0 +1,27 @@
+{
+  "operations": [
+    {
+      "table": "engine",
+      "action": "create",
+      "data": {
+        "code": "ENG001",
+        "location_code": "TERM001"
+      }
+    },
+    {
+      "table": "webconfig",
+      "action": "read",
+      "data": {
+        "type": "system"
+      }
+    },
+    {
+      "table": "wrap_price",
+      "action": "update",
+      "data": {
+        "id": 1,
+        "price": 150000
+      }
+    }
+  ]
+}

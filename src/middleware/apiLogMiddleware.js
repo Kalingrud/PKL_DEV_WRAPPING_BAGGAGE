@@ -111,14 +111,20 @@ const apiLogMiddleware = (req, res, next) => {  //mendefinisikan middleware untu
         agent_detect:               JSON.stringify(agentDetectObject)
       };
       
-      // Insert ke database
-      const logId = await ApiLog.create(logData);
-      
-      console.log(`Log saved: ${logId}`);
-      console.log(`${logData.url_method} ${logData.url_hit} - ${logData.duration}`);
+      // Insert ke database (non-blocking, fire-and-forget pattern)
+      // Tidak pakai await agar tidak blocking request flow
+      ApiLog.create(logData)
+        .then((logId) => {
+          console.log(`✅ Log saved: ${logId} | ${logData.url_method} ${logData.url_hit} - ${logData.duration}`);
+        })
+        .catch((error) => {
+          console.error('⚠️ Error saving log (non-critical):', error.message);
+          // Log error tapi tidak crash aplikasi
+        });
       
     } catch (error) {
-      console.error('Error saving log:', error.message);
+      console.error('⚠️ Error in logging middleware:', error.message);
+      // Logging error should not crash the application
     }
   });
   
